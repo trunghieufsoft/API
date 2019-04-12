@@ -1,9 +1,0 @@
-﻿namespace Services.Services.Abstractions
-{
-    public interface IEmailService
-    {
-        void SendNewPassword(string email, string password, string fullname, string username, string company = "FPT Company");
-
-        void SendForgotPassword(string email, string password, string fullname);
-    }
-}
