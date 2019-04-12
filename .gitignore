@@ -50,3 +50,16 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+ User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Text
+*txt
+
+**/sqlite3
+**/obj
+**/netcoreapp2.2
