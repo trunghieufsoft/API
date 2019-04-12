@@ -16,13 +16,15 @@ namespace Common.DTOs.UserModel
 
     public class UserOutput
     {
-        public UserOutput(User user)
+        public UserOutput(User user, Group group = null)
         {
             Id = user.Id;
+            Code = user.Code;
             Username = user.Username;
             FullName = user.FullName;
             CountryId = user.CountryId;
             Groups = user.Groups;
+            GroupName = group != null ? group.GroupName : null;
             Users = user.Users;
             UserType = user.UserTypeStr;
             Status = user.StatusStr;
@@ -40,10 +42,12 @@ namespace Common.DTOs.UserModel
 
         #region Properties
         public Guid Id { get; set; }
+        public string Code { get; set; }
         public string Username { get; set; }
         public string FullName { get; set; }
         public string CountryId { get; set; }
         public string Groups { get; set; }
+        public string GroupName { get; set; }
         public string Users { get; set; }
         public string Email { get; set; }
         public string Phone { get; set; }

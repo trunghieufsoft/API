@@ -8,6 +8,8 @@ namespace Services.Services.Abstractions
     {
         Guid CreateManager(DataInput<ManagerInput> requestDto);
 
+        Guid CreateStaff(DataInput<StaffInput> requestDto);
+
         UserOutput WebLogin(LoginInput requestDto);
 
         void UpdateToken(Guid userid, string token);

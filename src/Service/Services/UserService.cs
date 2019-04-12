@@ -22,9 +22,10 @@ namespace Services.Services
     public class UserService : BaseService, IUserService
     {
         #region initial
-        private readonly int[] _random = new int[] { 5, 10 };
-        private readonly int _maxLogin = 3;
         private readonly string _all = "All";
+        private readonly int _maxLogin = 3;
+        private readonly int _randomStaff = 10;
+        private readonly int _randomManager = 5;
         private readonly ILogService _logService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailService _emailService;
@@ -102,7 +103,7 @@ namespace Services.Services
                     CreatedDate = Clock.Now,
                 };
                 user = _userRepository.Insert(user);
-                _emailService.SendNewPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, null);
+                //_emailService.SendNewPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, null);
                 Log.Information("Create Manager Admin {Username} Successfully", dataInput.Username);
                 return user.Id;
             }
@@ -158,90 +159,10 @@ namespace Services.Services
                     CreatedDate = Clock.Now,
                 };
                 user = _userRepository.Insert(user);
-                _emailService.SendNewPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, null);
+                //_emailService.SendNewPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, null);
                 Log.Information("Create Manager Admin {Username} Successfully", dataInput.Username);
                 return user.Id;
             }
-        }
-
-        private IEnumerable<DropdownList> GetUsersNotAssignByGroups(UserTypeEnum userType, string countryId, string groups = null)
-        {
-            IEnumerable<User> TManagers = _userRepository.GetMany(x => x.UserType.Equals(UserTypeEnum.Manager) && x.CountryId.Equals(countryId));
-            IEnumerable<User> TStaff = _userRepository.GetMany(x => x.UserType.Equals(UserTypeEnum.Staff) && x.CountryId.Equals(countryId));
-            IEnumerable<User> TCustomer = _userRepository.GetMany(x => x.UserType.Equals(UserTypeEnum.Customer) && x.CountryId.Equals(countryId));
-            switch (userType)
-            {
-                case UserTypeEnum.Manager:
-                    TStaff.Where(s => !TManagers.Any(m => m.Users.TrimSplit(",").Any(x => x.Equals(s.Code)))).AsQueryable()
-                        .WhereIf(string.IsNullOrEmpty(groups), x => groups.TrimSplit(",").Any(g => g.Equals(x.Groups))).ToList().AsEnumerable();
-
-                    return TStaff.Count() > 0 ?
-                        TStaff.Select(x => new DropdownList()
-                        {
-                            Code = x.Code,
-                            Name = x.Username
-                        })
-                        : new List<DropdownList>();
-
-                case UserTypeEnum.Staff:
-                    TCustomer.Where(c => !TStaff.Any(s => s.Users.TrimSplit(",").Any(x => x.Equals(c.Code)))).AsQueryable()
-                        .WhereIf(string.IsNullOrEmpty(groups), x => groups.TrimSplit(",").Any(g => g.Equals(x.Groups))).ToList().AsEnumerable();
-
-                    return TCustomer.Count() > 0 ?
-                        TCustomer.Select(x => new DropdownList()
-                        {
-                            Code = x.Code,
-                            Name = x.Username
-                        })
-                        : new List<DropdownList>();
-
-                case UserTypeEnum.SuperAdmin:
-                case UserTypeEnum.Customer:
-                default:
-                    throw new BadData();
-            }
-            
-        }
-
-        private IEnumerable<DropdownList> GetUsersNotAssignByGroupsRamdum(UserTypeEnum userType, string countryId, string groups = null)
-        {
-            bool flag = true;
-            Random rd = new Random();
-            IList<int> indexLs = new List<int>();
-            IList<DropdownList> RamdomList = new List<DropdownList>();
-            IEnumerable<DropdownList> UsersNotAssignByGroups = GetUsersNotAssignByGroups(userType, countryId, groups);
-            int max = UsersNotAssignByGroups.Count();
-            DropdownList[] arr = UsersNotAssignByGroups.ToArray();
-
-            switch (userType)
-            {
-                case UserTypeEnum.Manager:
-                    if (max <= _random[0])
-                        return UsersNotAssignByGroups;
-                    break;
-
-                case UserTypeEnum.Staff:
-                    if (max <= _random[1])
-                        return UsersNotAssignByGroups;
-                    break;
-
-                case UserTypeEnum.SuperAdmin:
-                case UserTypeEnum.Customer:
-                default:
-                    throw new BadData();
-            }
-            while (flag)
-            {
-                int index = rd.Next(0, max - 1);
-                if (indexLs.Any(x => x != index))
-                {
-                    indexLs.Add(index);
-                    RamdomList.Add(arr[index]);
-                    if (RamdomList.Count == (UserTypeEnum.Manager.Equals(userType) ? _random[0] : _random[1]))
-                        flag = false;
-                }
-            }
-            return RamdomList;
         }
 
         public UserOutput WebLogin(LoginInput requestDto)
@@ -300,11 +221,12 @@ namespace Services.Services
 
             List<Expression<Func<UserOutput, bool>>> listExpresion = GetExpressions<UserOutput>(requestDto.Search.DataSearch, 5);
 
-            IQueryable<UserOutput> queryResult = _userRepository.GetAll()
-                .Where(x => x.UserType.Equals(UserTypeEnum.Manager))
-                .Select(row => new UserOutput(row));
-            var user = _userRepository.GetAll().FindField(x => x.Username.Equals(requestDto.CurrentUser));
-            if (queryResult == null) return ApplyPaging(requestDto.Search.DataSearch, null);
+            IQueryable<UserOutput> queryResult = GetAllType(UserTypeEnum.Manager).Select(row => new UserOutput(row, null));
+            var user = GetUserContact(requestDto.CurrentUser);
+
+            if (queryResult == null)
+                return ApplyPaging(requestDto.Search.DataSearch, null);
+
             queryResult = SearchAuthority(requestDto.Search.Property, queryResult, user);
             if (listExpresion != null)
             {
@@ -418,28 +340,25 @@ namespace Services.Services
 
         private IQueryable<UserOutput> GetUserListByUser(User user)
         {
-            IQueryable<UserOutput> Staff = _userRepository.GetAll()
-                .Where(x => x.UserType.Equals(UserTypeEnum.Staff))
-                .Select(row => new UserOutput(row));
-            IQueryable<UserOutput> Customer = _userRepository.GetAll()
-                .Where(x => x.UserType.Equals(UserTypeEnum.Customer))
-                .Select(row => new UserOutput(row));
+            IQueryable<UserOutput> Staff = GetAllType(UserTypeEnum.Staff).Select(row => new UserOutput(row, null));
+            IQueryable<UserOutput> Customer = GetAllType(UserTypeEnum.Customer).Select(row => new UserOutput(row, GetGroupContact(row.Groups)));
+
             switch (user.UserType)
             {
-                case UserTypeEnum.Manager:
-                    Staff = SearchAuthority(user.UserType, Staff, user);
-                    Customer = SearchAuthority(user.UserType, Customer, user);
-                    return Staff.Union(Customer);
+                //case UserTypeEnum.Manager:
+                //    Staff = SearchAuthority(user.UserType, Staff, user);
+                //    Customer = SearchAuthority(user.UserType, Customer, user);
+                //    return Staff.Union(Customer);
 
-                case UserTypeEnum.Staff:
-                    return SearchAuthority(user.UserType, Customer, user);
+                //case UserTypeEnum.Staff:
+                //    return SearchAuthority(user.UserType, Customer, user);
 
                 case UserTypeEnum.Customer:
                     return null;
 
                 case UserTypeEnum.SuperAdmin:
                 default:
-                    return _userRepository.GetAll().Select(row => new UserOutput(row));
+                    return _userRepository.GetAll().Select(row => new UserOutput(row, null));
             }
         }
 
@@ -476,40 +395,128 @@ namespace Services.Services
             return EncryptService.Encrypt(generated);
         }
 
-        private IQueryable<UserOutput> SearchAuthority(UserTypeEnum userType, IQueryable<UserOutput> queryResult, User user)
+        private IQueryable<UserOutput> SearchAuthority(UserTypeEnum userType, IEnumerable<UserOutput> queryResult, User user)
         {
             switch (userType)
             {
                 case UserTypeEnum.SuperAdmin:
-                    queryResult = queryResult.ToList().AsQueryable();
+                    queryResult = queryResult.ToList();
                     break;
 
                 case UserTypeEnum.Staff:
-
+                    queryResult = queryResult.Where(q => q.CreatedBy.Equals(user.Username) || q.Users.TrimSplit(",").Any(x => x.Equals(q.Code)));
                     break;
 
                 case UserTypeEnum.Manager:
-                    // do user create end assign for user 
-                    
+                    queryResult = queryResult.Where(q => q.CreatedBy.Equals(user.Username) || q.Users.TrimSplit(",").Any(x => x.Equals(q.Code)));
                     break;
 
                 case UserTypeEnum.Customer:
                 default:
                     return null;
             }
-            return queryResult;
+            return queryResult.AsQueryable();
+        }
+
+        private IEnumerable<DropdownList> GetUsersNotAssignByGroups(UserTypeEnum userType, string countryId, string groups = null)
+        {
+            IEnumerable<User> TManagers = GetAllType(userType, countryId);
+            IEnumerable<User> TStaff = GetAllType(userType, countryId);
+            IEnumerable<User> TCustomer = GetAllType(userType, countryId);
+            switch (userType)
+            {
+                case UserTypeEnum.Manager:
+                    TStaff.Where(s => !TManagers.Any(m => m.Users.TrimSplit(",").Any(x => x.Equals(s.Code)))).AsQueryable()
+                        .WhereIf(string.IsNullOrEmpty(groups), x => groups.TrimSplit(",").Any(g => g.Equals(x.Groups))).ToList().AsEnumerable();
+
+                    return TStaff.Count() > 0 ?
+                        TStaff.Select(x => new DropdownList()
+                        {
+                            Code = x.Code,
+                            Name = x.Username
+                        })
+                        : new List<DropdownList>();
+
+                case UserTypeEnum.Staff:
+                    TCustomer.Where(c => !TStaff.Any(s => s.Users.TrimSplit(",").Any(x => x.Equals(c.Code)))).AsQueryable()
+                        .WhereIf(string.IsNullOrEmpty(groups), x => groups.TrimSplit(",").Any(g => g.Equals(x.Groups))).ToList().AsEnumerable();
+
+                    return TCustomer.Count() > 0 ?
+                        TCustomer.Select(x => new DropdownList()
+                        {
+                            Code = x.Code,
+                            Name = x.Username
+                        })
+                        : new List<DropdownList>();
+
+                case UserTypeEnum.SuperAdmin:
+                case UserTypeEnum.Customer:
+                default:
+                    throw new BadData();
+            }
+
+        }
+
+        private IEnumerable<DropdownList> GetUsersNotAssignByGroupsRamdum(UserTypeEnum userType, string countryId, string groups = null)
+        {
+            bool flag = true;
+            Random rd = new Random();
+            IList<int> indexLs = new List<int>();
+            IList<DropdownList> RamdomList = new List<DropdownList>();
+            IEnumerable<DropdownList> UsersNotAssignByGroups = GetUsersNotAssignByGroups(userType, countryId, groups);
+            int max = UsersNotAssignByGroups.Count();
+            DropdownList[] arr = UsersNotAssignByGroups.ToArray();
+
+            switch (userType)
+            {
+                case UserTypeEnum.Manager:
+                    if (max <= _randomManager)
+                        return UsersNotAssignByGroups;
+                    break;
+
+                case UserTypeEnum.Staff:
+                    if (max <= _randomStaff)
+                        return UsersNotAssignByGroups;
+                    break;
+
+                case UserTypeEnum.SuperAdmin:
+                case UserTypeEnum.Customer:
+                default:
+                    throw new BadData();
+            }
+            while (flag)
+            {
+                int index = rd.Next(0, max - 1);
+                if (indexLs.Any(x => x != index))
+                {
+                    indexLs.Add(index);
+                    RamdomList.Add(arr[index]);
+                    if (RamdomList.Count == (UserTypeEnum.Manager.Equals(userType) ? _randomManager : _randomStaff))
+                        flag = false;
+                }
+            }
+            return RamdomList;
         }
 
         private bool ExistedUser(string username)
             => _userRepository.GetAll().Any(x => x.Username.Equals(username));
 
         private bool ExisedEmail(string email, bool allowBlank = false)
-            => (allowBlank && string.IsNullOrEmpty(email)) ?
-                false :
-                _userRepository.GetAll().Any(x => x.Email.Equals(email));
+            => !(allowBlank && string.IsNullOrEmpty(email))
+                ? _userRepository.GetAll().Any(x => x.Email.Equals(email))
+                : false;
 
         private bool CheckAuthority(string username)
-            => _userRepository.Get(x => x.Username.Equals(username)).UserType.Equals(UserTypeEnum.Customer);
+            => !GetUserContact(username).UserType.Equals(UserTypeEnum.Customer);
+
+        private User GetUserContact(string username)
+            => _userRepository.Get(x => x.Username.Equals(username));
+
+        private Group GetGroupContact(string group)
+            => _groupRepository.Get(x => x.GroupCode.Equals(group));
+
+        private IQueryable<User> GetAllType(UserTypeEnum type, string country = null)
+            => _userRepository.GetMany(x => x.UserType.Equals(type)).WhereIf(country != null, x => x.CountryId.Equals(country));
         #endregion
     }
 }

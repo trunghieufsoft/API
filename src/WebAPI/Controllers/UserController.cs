@@ -33,7 +33,7 @@ namespace WebApi.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("WebLogin")]
-        public IActionResult LecturerLogin([FromBody]LoginInput requestDto)
+        public IActionResult WebLogin([FromBody]LoginInput requestDto)
         {
             UserOutput result = _userService.WebLogin(requestDto);
             return Json(GenerateJSONWebToken(result));
@@ -45,6 +45,15 @@ namespace WebApi.Controllers
         {
             _sessionService.CheckSession(GetToken(), GetCurrentUser());
             var data = _userService.CreateManager(new DataInput<ManagerInput>(requestDto, GetCurrentUser()));
+            return Json(data);
+        }
+
+        [HttpPost]
+        [Route("CreateStaff")]
+        public IActionResult CreateStaff([FromBody] StaffInput requestDto)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            var data = _userService.CreateStaff(new DataInput<StaffInput>(requestDto, GetCurrentUser()));
             return Json(data);
         }
 
