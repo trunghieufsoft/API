@@ -671,11 +671,22 @@ namespace Common.Core.Extensions
                 case "All":
                     return string.Join(",", query.Select(selector));
                 default:
-                    return stringValue.Trim(",");
+                    return stringValue.SplitJoin(",");
             }
         }
 
-        public static string Trim(this string stringValue, string separator = "")
+        public static string SplitJoin(this string stringValue, string separator = "")
+        {
+            switch (stringValue)
+            {
+                case null: throw new ArgumentNullException(nameof(stringValue));
+                case "": throw new ArgumentException($"{nameof(stringValue)} cannot be empty", nameof(stringValue));
+                default:
+                    return string.Join(separator, stringValue.SplitTrim(separator));
+            }
+        }
+
+        public static string[] SplitTrim(this string stringValue, string separator = "")
         {
             switch (stringValue)
             {
@@ -689,10 +700,8 @@ namespace Common.Core.Extensions
                         arr[i] = item.Trim();
                         i++;
                     });
-                    return string.Join(separator, arr);
+                    return arr;
             }
         }
-
-        public static string[] TrimSplit(this string stringValue, string separator = "") => stringValue.Trim(separator).Split(separator);
     }
 }
