@@ -16,6 +16,10 @@ namespace Services.Services.Abstractions
 {
     public abstract class BaseService
     {
+        protected readonly string _all = "All";
+        protected readonly int _maxLogin = 3;
+        protected readonly int _randomStaff = 10;
+        protected readonly int _randomManager = 5;
         protected virtual List<Expression<Func<T, bool>>> GetExpressions<T>(SearchInput input, int number)
         {
             if (input == null || input.KeySearch == null)
@@ -63,7 +67,7 @@ namespace Services.Services.Abstractions
         {
             try
             {
-                if (input == null || string.IsNullOrEmpty(input.OrderBy) || typeof(T).GetProperty(FirstCharToUpper(input.OrderBy)) == null)
+                if (input == null || string.IsNullOrEmpty(input.OrderBy) || typeof(T).GetProperty(input.OrderBy.FirstCharToUpper()) == null)
                 {
                     return data.OrderBy("LastUpdateDate desc");
                 }
@@ -109,45 +113,6 @@ namespace Services.Services.Abstractions
                 LimitData = limit,
                 PageIndex = index
             };
-        }
-
-        public static string FirstCharToUpper(string s)
-        {
-            if (string.IsNullOrEmpty(s))
-            {
-                return string.Empty;
-            }
-            return char.ToUpper(s[0]) + s.Substring(1);
-        }
-
-        public string GenerateID(EnumIDGenerate enumID)
-        {
-            string key;
-            string id = DateTime.Now.Year.ToString() + DateTime.Now.Month.ToString() + DateTime.Now.Day.ToString();
-            id = Convert.ToInt32(id).ToString("00000000") + "M" + DateTime.Now.Minute.ToString() + "S" + DateTime.Now.Second.ToString();
-            switch (enumID)
-            {
-                case EnumIDGenerate.SuperAdmin:
-                    key = "SA" + id;
-                    break;
-
-                case EnumIDGenerate.Manager:
-                    key = "MG" + id;
-                    break;
-
-                case EnumIDGenerate.Staff:
-                    key = "SF" + id;
-                    break;
-
-                case EnumIDGenerate.Customer:
-                    key = "CT" + id;
-                    break;
-
-                default:
-                    key = "DF" + id;
-                    break;
-            }
-            return key;
         }
 
         public int CaculateDayOfConfig(SystemConfiguration obj)

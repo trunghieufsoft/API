@@ -21,6 +21,7 @@
         UserManagerExisted = 17,
         EmailMangerExisted = 18,
         IncorrectManagerUser = 19,
-        ExitedSpecialInUsername = 18,
+        ExitedSpecialInUsername = 20,
+        UserStaffExisted = 21
     }
 }

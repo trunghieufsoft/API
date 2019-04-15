@@ -68,15 +68,28 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("Search/ManagerAdmin")]
-        public IActionResult SearchManager([FromBody] SearchInput<UserTypeEnum> searchInput)
+        public IActionResult SearchManager([FromBody] SearchInput searchInput)
         {
             _sessionService.CheckSession(GetToken(), GetCurrentUser());
             var requestDto = new SearchByAuthority()
             {
                 CurrentUser = GetCurrentUser(),
-                Search = searchInput
+                Search = new SearchInput<UserTypeEnum>(searchInput, GetUserTypeUser().Value)
             };
             return Json(_userService.SearchManager(requestDto));
+        }
+
+        [HttpPost]
+        [Route("Search/StaffAdmin")]
+        public IActionResult StaffAdmin([FromBody] SearchInput searchInput)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            var requestDto = new SearchByAuthority()
+            {
+                CurrentUser = GetCurrentUser(),
+                Search = new SearchInput<UserTypeEnum>(searchInput, GetUserTypeUser().Value)
+            };
+            return Json(_userService.SearchStaff(requestDto));
         }
 
         [HttpGet]

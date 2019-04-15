@@ -6,6 +6,6 @@
 
         Manager = 1,
         Staff = 2,
-        Customer = 3,
+        Employee = 3,
     }
 }

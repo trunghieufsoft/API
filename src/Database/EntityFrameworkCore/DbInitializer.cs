@@ -1,10 +1,12 @@
 ﻿using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using Entities.Entities;
 using Common.Core.Timing;
 using Common.Core.Services;
 using Entities.Enumerations;
+using Common.Core.Extensions;
+using System.Threading.Tasks;
+using Common.Core.Enumerations;
+using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 
 namespace Database.EntityFrameworkCore
@@ -26,26 +28,10 @@ namespace Database.EntityFrameworkCore
             
             if (!_context.Users.Any(x => x.UserType == UserTypeEnum.SuperAdmin))
             {
-                // create SuperAdmin
-                _context.Users.Add(new User
-                {
-                    Code = "1000",
-                    Users = "All",
-                    UserType = UserTypeEnum.SuperAdmin,
-                    CreatedBy = _configuration["Auto:Create"],
-                    Email = _configuration["SuperAdmin:Email"],
-                    Phone = _configuration["SuperAdmin:Default"],
-                    Address = _configuration["SuperAdmin:Default"],
-                    Username = _configuration["SuperAdmin:Username"],
-                    FullName = _configuration["SuperAdmin:Fullname"],
-                    Password = EncryptService.Encrypt(_configuration["SuperAdmin:Password"]),
-                });
                 List<User> listUser = new List<User>()
                 {
-                    new User(){Code = "1001",UserType=UserTypeEnum.SuperAdmin,Username="SuperAdmin1",FullName="SuperAdmin",Phone="NA",Email=_configuration["SuperAdmin:Email"],Address=_configuration["SuperAdmin:Default"],Users="All",Status=StatusEnum.Active,Password=EncryptService.Encrypt(_configuration["SuperAdmin:Password"]),CreatedBy=_configuration["Auto:Create"]},
-                    new User(){Code = "1002",UserType=UserTypeEnum.SuperAdmin,Username="SuperAdmin2",FullName="SuperAdmin",Phone="NA",Email=_configuration["SuperAdmin:Email"],Address=_configuration["SuperAdmin:Default"],Users="All",Status=StatusEnum.Active,Password=EncryptService.Encrypt(_configuration["SuperAdmin:Password"]),CreatedBy=_configuration["Auto:Create"]},
-                    new User(){Code = "1003",UserType=UserTypeEnum.SuperAdmin,Username="SuperAdmin3",FullName="SuperAdmin",Phone="NA",Email=_configuration["SuperAdmin:Email"],Address=_configuration["SuperAdmin:Default"],Users="All",Status=StatusEnum.Active,Password=EncryptService.Encrypt(_configuration["SuperAdmin:Password"]),CreatedBy=_configuration["Auto:Create"]},
-                    new User(){Code = "1004",UserType=UserTypeEnum.SuperAdmin,Username="SuperAdmin4",FullName="SuperAdmin",Phone="NA",Email=_configuration["SuperAdmin:Email"],Address=_configuration["SuperAdmin:Default"],Users="All",Status=StatusEnum.Active,Password=EncryptService.Encrypt(_configuration["SuperAdmin:Password"]),CreatedBy=_configuration["Auto:Create"]},
+                    new User(){Code = EnumIDGenerate.SuperAdmin.GenerateCode(100001),UserType=UserTypeEnum.SuperAdmin,Username=_configuration["SuperAdmin:Username"],FullName=_configuration["SuperAdmin:Fullname"],Phone=_configuration["SuperAdmin:Default"],Email=_configuration["SuperAdmin:Email"],Address=_configuration["SuperAdmin:Default"],Users="All",Status=StatusEnum.Active,Password=EncryptService.Encrypt(_configuration["SuperAdmin:Password"]),CreatedBy=_configuration["Auto:Create"]},
+                    new User(){Code = EnumIDGenerate.SuperAdmin.GenerateCode(100002),UserType=UserTypeEnum.SuperAdmin,Username="string",FullName="SuperAdmin",Phone="NA",Email=_configuration["SuperAdmin:Email"],Address=_configuration["SuperAdmin:Default"],Users="All",Status=StatusEnum.Active,Password=EncryptService.Encrypt("string"),CreatedBy=_configuration["Auto:Create"]},
                 };
                 _context.Users.AddRange(listUser);
                 change = true;
@@ -138,10 +124,13 @@ namespace Database.EntityFrameworkCore
             {
                 List<Group> listGroup = new List<Group>()
                 {
-                    new Group(){GroupCode="MS",GroupName="Group 1",CreatedBy=_configuration["Auto:Create"]},
-                    new Group(){GroupCode="CF",GroupName="Group 2",CreatedBy=_configuration["Auto:Create"]},
-                    new Group(){GroupCode="WE",GroupName="Group 3",CreatedBy=_configuration["Auto:Create"]},
-                    new Group(){GroupCode="ES",GroupName="Group 4",CreatedBy=_configuration["Auto:Create"]},
+                    new Group(){GroupCode="GG",GroupName="Group 1",CreatedBy=_configuration["Auto:Create"]},
+                    new Group(){GroupCode="VG",GroupName="Group 2",CreatedBy=_configuration["Auto:Create"]},
+                    new Group(){GroupCode="GD",GroupName="Group 3",CreatedBy=_configuration["Auto:Create"]},
+                    new Group(){GroupCode="MD",GroupName="Group 4",CreatedBy=_configuration["Auto:Create"]},
+                    new Group(){GroupCode="BG",GroupName="Group 5",CreatedBy=_configuration["Auto:Create"]},
+                    new Group(){GroupCode="BA",GroupName="Group 6",CreatedBy=_configuration["Auto:Create"]},
+                    new Group(){GroupCode="DF",GroupName="Group 7",CreatedBy=_configuration["Auto:Create"]},
                 };
                 _context.Groups.AddRange(listGroup);
                 change = true;

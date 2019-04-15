@@ -11,8 +11,6 @@ namespace Database.Repositories
     {
         int Count();
 
-        TEntity GetLate();
-
         TEntity GetById(Guid id);
 
         TEntity Get(Expression<Func<TEntity, bool>> where);

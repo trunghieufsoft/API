@@ -14,7 +14,7 @@ namespace WebAPI.Infrastructure.Filters
             System.Exception exception = context.Exception;
             ResponseModel responseModel = new ResponseModel();
             ErrorModel errorModel = new ErrorModel();
-            int code = (int)HttpStatusCode.BadRequest; ;
+            int code = (int)HttpStatusCode.BadRequest;
             switch (exception)
             {
                 case NotFound _:

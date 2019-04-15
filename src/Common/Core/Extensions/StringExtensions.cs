@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Common.Core.Enumerations;
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -621,7 +621,16 @@ namespace Common.Core.Extensions
             return stringValue.Left(maxLength - postfix.Length) + postfix;
         }
 
-        public static string FirstCharToUpper(this string stringValue, string separator = "")
+        public static string FirstCharToUpper(this string stringValue)
+        {
+            if (string.IsNullOrEmpty(stringValue))
+            {
+                return string.Empty;
+            }
+            return char.ToUpper(stringValue[0]) + stringValue.Substring(1);
+        }
+
+        public static string FirstCharToUpper(this string stringValue, string separator)
         {
             switch (stringValue)
             {
@@ -643,14 +652,16 @@ namespace Common.Core.Extensions
         public static bool CheckPassFormat(this string stringValue)
         {
             if (string.IsNullOrEmpty(stringValue))
-                return false;
+                return true;
             var hasNumber = new Regex(@"[0-9]+");
             var hasUpperChar = new Regex(@"[A-Z]+");
-            var hasLowerChar = new Regex(@"[a-z]+");
-            var hasSpecial = new char[] { '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', ',', '`', '~' };
             var hasMinimum8Chars = new Regex(@".{8,}");
+            int isValidated = 0;
+            isValidated = stringValue.HasSpecial() ? isValidated + 1 : isValidated;
+            isValidated = hasNumber.IsMatch(stringValue) ? isValidated + 1 : isValidated;
+            isValidated = hasUpperChar.IsMatch(stringValue) ? isValidated + 1 : isValidated;
 
-            return !(stringValue.IndexOfAny(hasSpecial) > -1) && hasLowerChar.IsMatch(stringValue) && hasNumber.IsMatch(stringValue) && hasUpperChar.IsMatch(stringValue) && hasMinimum8Chars.IsMatch(stringValue);
+            return isValidated >= 2 && hasMinimum8Chars.IsMatch(stringValue);
         }
 
         public static bool HasSpecial(this string stringValue)
@@ -658,8 +669,7 @@ namespace Common.Core.Extensions
             if (string.IsNullOrEmpty(stringValue))
                 return false;
             var hasSpecial = new char[] { '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', ',', '`', '~' };
-
-            return stringValue.IndexOfAny(hasSpecial) > -1;
+            return (stringValue.IndexOfAny(hasSpecial) > -1);
         }
 
         public static string ConvertToString<TEntity>(this string stringValue, IQueryable<TEntity> query, Expression<Func<TEntity, string>> selector) where TEntity : class
@@ -702,6 +712,37 @@ namespace Common.Core.Extensions
                     });
                     return arr;
             }
+        }
+
+        public static string GenerateCode(this EnumIDGenerate enumCode, int index)
+        {
+            byte[] byteArr = Encoding.Unicode.GetBytes(index.ToString());
+            string base64 =  Convert.ToBase64String(byteArr);
+            switch (enumCode)
+            {
+                case EnumIDGenerate.SuperAdmin:
+                    return "SA:" + base64 + ":U";
+
+                case EnumIDGenerate.Manager:
+                    return "MA:" + base64 + ":G";
+
+                case EnumIDGenerate.Staff:
+                    return "SF:" + base64 + ":T";
+
+                case EnumIDGenerate.Employee:
+                    return "EA:" + base64 + ":M";
+
+                default:
+                    return "DF:" + base64 + ":D";
+            }
+        }
+
+        public static string Base64ToString(this string Code)
+        {
+            Code = Code.Substring(3);
+            Code = Code.Substring(0, Code.Length - 2);
+            byte[] byteArr = Convert.FromBase64String(Code);
+            return ASCIIEncoding.ASCII.GetString(byteArr, 0, byteArr.Length - 1);
         }
     }
 }

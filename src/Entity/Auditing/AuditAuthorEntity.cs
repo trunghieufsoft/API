@@ -29,6 +29,6 @@ namespace Entities.Auditing
         public string Password { get; set; }
 
         [Column("PASSWORD_LAST_UDT")]
-        public DateTime? PasswordLastUdt { get; set; }
+        public DateTime? PasswordLastUdt { get; set; } = DateTime.Now;
     }
 }

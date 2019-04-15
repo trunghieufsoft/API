@@ -21,5 +21,7 @@ namespace Services.Services.Abstractions
         string GetSubcriseToken(Guid userid);
 
         SearchOutput SearchManager(SearchByAuthority requestDto);
+
+        SearchOutput SearchStaff(SearchByAuthority requestDto);
     }
 }

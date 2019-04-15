@@ -39,11 +39,6 @@ namespace Database.Repositories
             return Table.Count();
         }
 
-        public virtual TEntity GetLate()
-        {
-            return Table.Last();
-        }
-
         public virtual IQueryable<TEntity> GetAll()
         {
             return Table;
