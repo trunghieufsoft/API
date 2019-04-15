@@ -27,7 +27,8 @@ namespace Common.DTOs.UserModel
             GroupName = group != null ? group.GroupName : null;
             Users = user.Users;
             UserType = user.UserTypeStr;
-            Status = user.StatusStr;
+            Status = user.Status;
+            StatusStr = user.StatusStr;
             StartDate = user.StartDate;
             ExpiredDate = user.ExpiredDate;
             Email = user.Email;
@@ -53,7 +54,8 @@ namespace Common.DTOs.UserModel
         public string Phone { get; set; }
         public string Address { get; set; }
         public string UserType { get; set; }
-        public string Status { get; set; }
+        public StatusEnum Status { get; set; }
+        public string StatusStr { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? ExpiredDate { get; set; }
         public string ExpiredPassword { get; set; }
