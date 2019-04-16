@@ -20,8 +20,10 @@ namespace Services.Services.Abstractions
 
         string GetSubcriseToken(Guid userid);
 
-        SearchOutput SearchManager(SearchByAuthority requestDto);
+        SearchOutput SearchManager(DataInput<SearchInput> requestDto);
 
-        SearchOutput SearchStaff(SearchByAuthority requestDto);
+        SearchOutput SearchStaff(DataInput<SearchInput> requestDto);
+
+        SearchOutput SearchEmployee(DataInput<SearchInput> requestDto);
     }
 }

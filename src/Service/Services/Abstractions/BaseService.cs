@@ -17,6 +17,7 @@ namespace Services.Services.Abstractions
     public abstract class BaseService
     {
         protected readonly string _all = "All";
+        protected readonly string _comma = ",";
         protected readonly int _maxLogin = 3;
         protected readonly int _randomStaff = 10;
         protected readonly int _randomManager = 5;

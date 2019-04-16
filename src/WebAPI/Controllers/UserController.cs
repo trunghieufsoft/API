@@ -71,25 +71,38 @@ namespace WebApi.Controllers
         public IActionResult SearchManager([FromBody] SearchInput searchInput)
         {
             _sessionService.CheckSession(GetToken(), GetCurrentUser());
-            var requestDto = new SearchByAuthority()
+            var requestDto = new DataInput<SearchInput>()
             {
                 CurrentUser = GetCurrentUser(),
-                Search = new SearchInput<UserTypeEnum>(searchInput, GetUserTypeUser().Value)
+                Dto = searchInput
             };
             return Json(_userService.SearchManager(requestDto));
         }
 
         [HttpPost]
-        [Route("Search/StaffAdmin")]
-        public IActionResult StaffAdmin([FromBody] SearchInput searchInput)
+        [Route("Search/Staff")]
+        public IActionResult SearchStaff([FromBody] SearchInput searchInput)
         {
             _sessionService.CheckSession(GetToken(), GetCurrentUser());
-            var requestDto = new SearchByAuthority()
+            var requestDto = new DataInput<SearchInput>()
             {
                 CurrentUser = GetCurrentUser(),
-                Search = new SearchInput<UserTypeEnum>(searchInput, GetUserTypeUser().Value)
+                Dto = searchInput
             };
             return Json(_userService.SearchStaff(requestDto));
+        }
+
+        [HttpPost]
+        [Route("Search/Employee")]
+        public IActionResult SearchEmployee([FromBody] SearchInput searchInput)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            var requestDto = new DataInput<SearchInput>()
+            {
+                CurrentUser = GetCurrentUser(),
+                Dto = searchInput
+            };
+            return Json(_userService.SearchEmployee(requestDto));
         }
 
         [HttpGet]

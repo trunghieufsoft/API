@@ -716,7 +716,7 @@ namespace Common.Core.Extensions
 
         public static string GenerateCode(this EnumIDGenerate enumCode, int index)
         {
-            byte[] byteArr = Encoding.Unicode.GetBytes(index.ToString());
+            byte[] byteArr = Encoding.UTF8.GetBytes(index.ToString());
             string base64 =  Convert.ToBase64String(byteArr);
             switch (enumCode)
             {
@@ -742,7 +742,7 @@ namespace Common.Core.Extensions
             Code = Code.Substring(3);
             Code = Code.Substring(0, Code.Length - 2);
             byte[] byteArr = Convert.FromBase64String(Code);
-            return ASCIIEncoding.ASCII.GetString(byteArr, 0, byteArr.Length - 1);
+            return Encoding.UTF8.GetString(byteArr);
         }
     }
 }

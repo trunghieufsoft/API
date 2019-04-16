@@ -58,7 +58,7 @@ namespace Services.Services
             }
             else
             {
-                if (CheckAuthority(requestDto.CurrentUser))
+                if (CheckAuthority(requestDto.CurrentUser, UserTypeEnum.Manager))
                 {
                     Log.Information("Account {Username} not authorized!", requestDto.CurrentUser);
                     throw new DefinedException(ErrorCodeEnum.NotAuthorized);
@@ -87,8 +87,8 @@ namespace Services.Services
                     CountryId = dataInput.CountryId,
                     Username = dataInput.Username,
                     FullName = dataInput.FullName,
-                    Users = string.Join(",", GetUsersNotAssignByGroupsRamdum(UserTypeEnum.Manager, dataInput.CountryId, dataInput.Groups).Select(x => x.Code)),
-                    Groups = dataInput.Groups.SplitJoin(","),
+                    Users = string.Join(_comma, GetUsersNotAssignByGroupsRamdum(UserTypeEnum.Manager, dataInput.CountryId, dataInput.Groups).Select(x => x.Code)),
+                    Groups = dataInput.Groups.SplitJoin(_comma),
                     Address = dataInput.Address,
                     Email = dataInput.Email,
                     Phone = dataInput.PhoneNo,
@@ -115,7 +115,7 @@ namespace Services.Services
             }
             else
             {
-                if (CheckAuthority(requestDto.CurrentUser))
+                if (CheckAuthority(requestDto.CurrentUser, UserTypeEnum.Staff))
                 {
                     Log.Information("Account {Username} not authorized!", requestDto.CurrentUser);
                     throw new DefinedException(ErrorCodeEnum.NotAuthorized);
@@ -144,7 +144,7 @@ namespace Services.Services
                     CountryId = dataInput.CountryId,
                     Username = dataInput.Username,
                     FullName = dataInput.FullName,
-                    Users = string.Join(",", GetUsersNotAssignByGroupsRamdum(UserTypeEnum.Staff, dataInput.CountryId, dataInput.Group).Select(x => x.Code)),
+                    Users = string.Join(_comma, GetUsersNotAssignByGroupsRamdum(UserTypeEnum.Staff, dataInput.CountryId, dataInput.Group).Select(x => x.Code)),
                     Groups = dataInput.Group,
                     Address = dataInput.Address,
                     Email = dataInput.Email,
@@ -171,14 +171,14 @@ namespace Services.Services
 
         public UserOutput View(Guid id)
         {
-            User user = _userRepository.GetById(id);
+            User row = _userRepository.GetById(id);
 
-            if (user == null)
+            if (row == null)
             {
                 Log.Error("User Not Found");
                 throw new DefinedException(ErrorCodeEnum.IncorrectManagerUser);
             }
-            return new UserOutput(user);
+            return new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null);
         }
 
         public CountTotalUsers CountTotalUsers(string currentUser)
@@ -197,19 +197,17 @@ namespace Services.Services
         public string GetSubcriseToken(Guid userid)
         {
             var user = _userRepository.GetById(userid);
-            if (user != null)
-            {
-                return user.SubcriseToken;
-
-            }
-            return null;
+            return user != null ? user.SubcriseToken : null;
         }
 
-        public SearchOutput SearchManager(SearchByAuthority requestDto)
+        public SearchOutput SearchManager(DataInput<SearchInput> requestDto)
             => Search(requestDto, UserTypeEnum.Manager, 5);
 
-        public SearchOutput SearchStaff(SearchByAuthority requestDto)
-            => Search(requestDto, UserTypeEnum.Manager, 7);
+        public SearchOutput SearchStaff(DataInput<SearchInput> requestDto)
+            => Search(requestDto, UserTypeEnum.Staff, 7);
+
+        public SearchOutput SearchEmployee(DataInput<SearchInput> requestDto)
+            => Search(requestDto, UserTypeEnum.Employee, 5);
 
         public void UpdateToken(Guid userid, string token)
         {
@@ -318,8 +316,8 @@ namespace Services.Services
             {
                 case UserTypeEnum.Manager:
                     TManagers = TManagers.AsQueryable().Where(x => !string.IsNullOrEmpty(x.Users));
-                    TStaff = TStaff.Where(s => !TManagers.Any(m => m.Users.SplitTrim(",").Any(x => x.Equals(s.Code)))).AsQueryable()
-                        .WhereIf(!string.IsNullOrEmpty(groups), x => groups.SplitTrim(",").Any(g => g.Equals(x.Groups)));
+                    TStaff = TStaff.Where(s => !TManagers.Any(m => m.Users.SplitTrim(_comma).Any(x => x.Equals(s.Code)))).AsQueryable()
+                        .WhereIf(!string.IsNullOrEmpty(groups), x => groups.SplitTrim(_comma).Any(g => g.Equals(x.Groups)));
 
                     return TStaff.Count() > 0 ?
                         TStaff.AsQueryable().Select(x => new DropdownList(x.Code, x.Username)).AsEnumerable()
@@ -327,8 +325,8 @@ namespace Services.Services
 
                 case UserTypeEnum.Staff:
                     TStaff = TStaff.AsQueryable().Where(x => !string.IsNullOrEmpty(x.Users));
-                    TEmployee = TEmployee.Where(c => !TStaff.Any(s => s.Users.SplitTrim(",").Any(x => x.Equals(c.Code)))).AsQueryable()
-                        .WhereIf(!string.IsNullOrEmpty(groups), x => groups.SplitTrim(",").Any(g => g.Equals(x.Groups)));
+                    TEmployee = TEmployee.Where(c => !TStaff.Any(s => s.Users.SplitTrim(_comma).Any(x => x.Equals(c.Code)))).AsQueryable()
+                        .WhereIf(!string.IsNullOrEmpty(groups), x => groups.SplitTrim(_comma).Any(g => g.Equals(x.Groups)));
 
                     return TEmployee.Count() > 0 ?
                         TEmployee.AsQueryable().Select(x => new DropdownList(x.Code, x.Username)).AsEnumerable()
@@ -342,17 +340,17 @@ namespace Services.Services
 
         }
 
-        private IEnumerable<DropdownList> GetUsersNotAssignByGroupsRamdum(UserTypeEnum userType, string countryId, string groups = null)
+        private IEnumerable<DropdownList> GetUsersNotAssignByGroupsRamdum(UserTypeEnum type, string countryId, string groups = null)
         {
             bool flag = true;
             Random rd = new Random();
             IList<int> indexLs = new List<int>();
             IList<DropdownList> RamdomList = new List<DropdownList>();
-            IEnumerable<DropdownList> UsersNotAssignByGroups = GetUsersNotAssignByGroups(userType, countryId, groups);
+            IEnumerable<DropdownList> UsersNotAssignByGroups = GetUsersNotAssignByGroups(type, countryId, groups);
             int max = UsersNotAssignByGroups.Count();
             DropdownList[] arr = UsersNotAssignByGroups.ToArray();
 
-            switch (userType)
+            switch (type)
             {
                 case UserTypeEnum.Manager:
                     if (max <= _randomManager)
@@ -364,9 +362,9 @@ namespace Services.Services
                         return UsersNotAssignByGroups;
                     break;
 
+                default:
                 case UserTypeEnum.SuperAdmin:
                 case UserTypeEnum.Employee:
-                default:
                     throw new BadData();
             }
             while (flag)
@@ -376,7 +374,7 @@ namespace Services.Services
                 {
                     indexLs.Add(index);
                     RamdomList.Add(arr[index]);
-                    if (RamdomList.Count == (UserTypeEnum.Manager.Equals(userType) ? _randomManager : _randomStaff))
+                    if (RamdomList.Count == (UserTypeEnum.Manager.Equals(type) ? _randomManager : _randomStaff))
                         flag = false;
                 }
             }
@@ -416,26 +414,27 @@ namespace Services.Services
             return EncryptService.Encrypt(generated);
         }
 
-        private SearchOutput Search(SearchByAuthority requestDto, UserTypeEnum searchUserType, int fieldNumber)
+        private SearchOutput Search(DataInput<SearchInput> requestDto, UserTypeEnum searchUserType, int fieldNumber)
         {
-            if (requestDto.Search.Property.Equals(UserTypeEnum.Employee))
+            if (CheckAuthority(requestDto.CurrentUser, searchUserType))
             {
-                return ApplyPaging(requestDto.Search.DataSearch, null);
+                return ApplyPaging(requestDto.Dto, null);
             }
-            if (requestDto.Search != null)
+            if (requestDto.Dto != null)
             {
-                requestDto.Search.DataSearch.SearchEqual = (new string[] { "countryId", "users", "groups" }).ToList();
+                requestDto.Dto.SearchEqual = (new string[] { "countryId", "users", "groups" }).ToList();
             }
 
-            List<Expression<Func<UserOutput, bool>>> listExpresion = GetExpressions<UserOutput>(requestDto.Search.DataSearch, fieldNumber);
+            List<Expression<Func<UserOutput, bool>>> listExpresion = GetExpressions<UserOutput>(requestDto.Dto, fieldNumber);
 
             var user = GetUserContact(requestDto.CurrentUser);
-            IQueryable<UserOutput> queryResult = GetAllType(searchUserType, user.CountryId != null ? user.CountryId : null).Select(row => new UserOutput(row, null));
+            IQueryable<UserOutput> queryResult = GetAllType(user.UserType.Equals(UserTypeEnum.SuperAdmin) ? searchUserType : user.UserType,
+                user.CountryId != null ? user.CountryId : null).Select(row => new UserOutput(row, null));
 
             if (queryResult == null)
-                return ApplyPaging(requestDto.Search.DataSearch, null);
+                return ApplyPaging(requestDto.Dto, null);
 
-            queryResult = SearchAuthority(queryResult, user);
+            queryResult = SearchAuthority(queryResult, user, searchUserType);
             if (listExpresion != null)
             {
                 foreach (Expression<Func<UserOutput, bool>> expression in listExpresion)
@@ -444,56 +443,72 @@ namespace Services.Services
                 }
             }
 
-            queryResult = ApplyOrderBy(requestDto.Search.DataSearch, queryResult);
-            return ApplyPaging(requestDto.Search.DataSearch, queryResult);
+            queryResult = ApplyOrderBy(requestDto.Dto, queryResult);
+            return ApplyPaging(requestDto.Dto, queryResult);
         }
 
-        private IQueryable<UserOutput> SearchAuthority(IQueryable<UserOutput> queryResult, User user, UserTypeEnum? searchUserType = null)
+        /// <summary>
+        /// SearchAuthority
+        /// </summary>
+        /// <param name="queryResult">list all account follow user type</param>
+        /// <param name="user">account login</param>
+        /// <param name="searchUserType">key recursively</param>
+        /// <returns></returns>
+        private IQueryable<UserOutput> SearchAuthority(IQueryable<UserOutput> queryResult, User user, UserTypeEnum searchUserType)
         {
-            searchUserType = searchUserType == null ? user.UserType : searchUserType;
+            if (user.UserType.Equals(UserTypeEnum.SuperAdmin))
+                searchUserType = user.UserType;
+            IQueryable<UserOutput> employeeUsers;
+            switch (searchUserType)
+            {
+                case UserTypeEnum.Manager:
+                    var staffUsers = GetAllType(UserTypeEnum.Staff, user.CountryId != null ? user.CountryId : null).Select(row => new UserOutput(row, null));
+                    queryResult = staffUsers.Where(staff => user.Users.SplitTrim(_comma).Any(x => x.Equals(staff.Code)));
+                    break;
+                
+                case UserTypeEnum.Staff:
+                    if (user.UserType.Equals(UserTypeEnum.Manager))
+                        return SearchAuthority(queryResult, user, user.UserType);
+                    employeeUsers = GetAllType(UserTypeEnum.Employee, user.CountryId != null ? user.CountryId : null).Select(row => new UserOutput(row, null));
+                    queryResult = employeeUsers.Where(employee => queryResult.Any(staff => staff.Users.SplitTrim(_comma).Any(x => x.Equals(employee.Code))));
+                    break;
 
-            //switch (userType)
-            //{
-            //    case UserTypeEnum.SuperAdmin:
-            //        queryResult = queryResult.ToList();
-            //        break;
+                case UserTypeEnum.Employee:
+                    if (user.UserType.Equals(UserTypeEnum.Manager))
+                        queryResult = SearchAuthority(queryResult, user, UserTypeEnum.Staff);
+                    employeeUsers = GetAllType(UserTypeEnum.Employee, user.CountryId != null ? user.CountryId : null).Select(row => new UserOutput(row, null));
+                    queryResult = employeeUsers.Where(employee => user.Users.SplitTrim(_comma).Any(x => x.Equals(employee.Code)));
+                    return SearchAuthority(queryResult, user, user.UserType);
 
-            //    case UserTypeEnum.Staff:
-            //        queryResult = queryResult.Where(q => q.CreatedBy.Equals(user.Username) || q.Users.SplitTrim(",").Any(x => x.Equals(q.Code)));
-            //        break;
-
-            //    case UserTypeEnum.Manager:
-            //        queryResult = queryResult.Where(q => q.CreatedBy.Equals(user.Username) || q.Users.SplitTrim(",").Any(x => x.Equals(q.Code)));
-            //        break;
-
-            //    case UserTypeEnum.Customer:
-            //    default:
-            //        return null;
-            //}
-            return queryResult.AsQueryable();
+                default:
+                case UserTypeEnum.SuperAdmin:
+                    return queryResult.ToList().AsQueryable();
+            }
+            return queryResult;
         }
 
         private IQueryable<UserOutput> GetUserListByUser(User user)
         {
-            IQueryable<UserOutput> Staff = GetAllType(UserTypeEnum.Staff).Select(row => new UserOutput(row, null));
-            IQueryable<UserOutput> Customer = GetAllType(UserTypeEnum.Employee).Select(row => new UserOutput(row, GetGroupContact(row.Groups)));
-
+            IQueryable<UserOutput> users = GetAllType(user.UserType)
+                .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
+            
             switch (user.UserType)
             {
-                //case UserTypeEnum.Manager:
-                //    Staff = SearchAuthority(user.UserType, Staff, user);
-                //    Customer = SearchAuthority(user.UserType, Customer, user);
-                //    return Staff.Union(Customer);
+                case UserTypeEnum.Manager:
+                    IQueryable<UserOutput> Staff = SearchAuthority(users, user, UserTypeEnum.Staff);
+                    IQueryable<UserOutput> Employee = SearchAuthority(users, user, UserTypeEnum.Employee);
+                    return Staff.Union(Employee);
 
-                //case UserTypeEnum.Staff:
-                //    return SearchAuthority(user.UserType, Customer, user);
+                case UserTypeEnum.Staff:
+                    return SearchAuthority(users, user, UserTypeEnum.Staff);
 
                 case UserTypeEnum.Employee:
                     return null;
 
                 case UserTypeEnum.SuperAdmin:
                 default:
-                    return _userRepository.GetAll().Select(row => new UserOutput(row, null));
+                    return _userRepository.GetAll()
+                        .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
             }
         }
         #endregion
@@ -507,8 +522,23 @@ namespace Services.Services
                 ? _userRepository.GetAll().Any(x => x.Email.Equals(email))
                 : false;
 
-        private bool CheckAuthority(string username)
-            => GetUserContact(username).UserType.Equals(UserTypeEnum.Employee);
+        private bool CheckAuthority(string username, UserTypeEnum type)
+        {
+            var userType = GetUserContact(username).UserType;
+            switch (userType)
+            {
+                case UserTypeEnum.Manager:
+                case UserTypeEnum.Staff:
+                    return (int)userType < (int)type;
+
+                case UserTypeEnum.Employee:
+                    return true;
+
+                case UserTypeEnum.SuperAdmin:
+                default:
+                    return false;
+            }
+        }
 
         private User GetUserContact(string username)
             => _userRepository.Get(x => x.Username.Equals(username));
