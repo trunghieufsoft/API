@@ -10,6 +10,8 @@ namespace Services.Services.Abstractions
 
         Guid CreateStaff(DataInput<StaffInput> requestDto);
 
+        Guid CreateEmployee(DataInput<EmployeeInput> requestDto);
+
         UserOutput WebLogin(LoginInput requestDto);
 
         void UpdateToken(Guid userid, string token);

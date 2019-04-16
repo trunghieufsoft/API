@@ -48,119 +48,11 @@ namespace Services.Services
         #endregion
 
         #region API
-        public Guid CreateManager(DataInput<ManagerInput> requestDto)
-        {
-            var dataInput = requestDto.Dto;
-            if (ExistedUser(dataInput.Username))
-            {
-                Log.Information("Username {Username} existed!", dataInput.Username);
-                throw new DefinedException(ErrorCodeEnum.UserManagerExisted);
-            }
-            else
-            {
-                if (CheckAuthority(requestDto.CurrentUser, UserTypeEnum.Manager))
-                {
-                    Log.Information("Account {Username} not authorized!", requestDto.CurrentUser);
-                    throw new DefinedException(ErrorCodeEnum.NotAuthorized);
-                }
-                if (ExisedEmail(dataInput.Email))
-                {
-                    Log.Information("Email {Email} existed!", dataInput.Email);
-                    throw new DefinedException(ErrorCodeEnum.EmailMangerExisted);
-                }
-                if (dataInput.Username.HasSpecial())
-                {
-                    Log.Information("User {Username} wrong format!", dataInput.Username);
-                    throw new DefinedException(ErrorCodeEnum.ExitedSpecialInUsername);
-                }
-                if (!dataInput.Password.CheckPassFormat())
-                {
-                    Log.Information("Password {Password} wrong format!", dataInput.Password);
-                    throw new DefinedException(ErrorCodeEnum.PasswordWrongFormat);
-                }
-                string codeLate = _userRepository.GetAll().OrderBy(x => x.CreatedDate).Last().Code.Base64ToString();
-                var Code = EnumIDGenerate.Manager.GenerateCode(Convert.ToInt32(codeLate) + 1);
-                User user = new User
-                {
-                    Id = Guid.NewGuid(),
-                    Code = Code,
-                    CountryId = dataInput.CountryId,
-                    Username = dataInput.Username,
-                    FullName = dataInput.FullName,
-                    Users = string.Join(_comma, GetUsersNotAssignByGroupsRamdum(UserTypeEnum.Manager, dataInput.CountryId, dataInput.Groups).Select(x => x.Code)),
-                    Groups = dataInput.Groups.SplitJoin(_comma),
-                    Address = dataInput.Address,
-                    Email = dataInput.Email,
-                    Phone = dataInput.PhoneNo,
-                    UserType = UserTypeEnum.Manager,
-                    StartDate = dataInput.StartDate,
-                    ExpiredDate = dataInput.ExpiredDate,
-                    Password = string.IsNullOrEmpty(dataInput.Password) ? GeneratePassword() : EncryptService.Encrypt(dataInput.Password),
-                    CreatedBy = requestDto.CurrentUser,
-                };
-                user = _userRepository.Insert(user);
-                //_emailService.SendNewPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, null);
-                Log.Information("Create Manager Admin {Username} Successfully", dataInput.Username);
-                return user.Id;
-            }
-        }
+        public Guid CreateManager(DataInput<ManagerInput> requestDto) => Create(requestDto.CurrentUser, UserTypeEnum.Manager, ErrorCodeEnum.UserManagerExisted, ErrorCodeEnum.EmailManagerExisted, EnumIDGenerate.Manager, requestDto.Dto);
 
-        public Guid CreateStaff(DataInput<StaffInput> requestDto)
-        {
-            var dataInput = requestDto.Dto;
-            if (ExistedUser(dataInput.Username))
-            {
-                Log.Information("Username {Username} existed!", dataInput.Username);
-                throw new DefinedException(ErrorCodeEnum.UserStaffExisted);
-            }
-            else
-            {
-                if (CheckAuthority(requestDto.CurrentUser, UserTypeEnum.Staff))
-                {
-                    Log.Information("Account {Username} not authorized!", requestDto.CurrentUser);
-                    throw new DefinedException(ErrorCodeEnum.NotAuthorized);
-                }
-                if (ExisedEmail(dataInput.Email))
-                {
-                    Log.Information("Email {Email} existed!", dataInput.Email);
-                    throw new DefinedException(ErrorCodeEnum.EmailMangerExisted);
-                }
-                if (dataInput.Username.HasSpecial())
-                {
-                    Log.Information("User {Username} wrong format!", dataInput.Username);
-                    throw new DefinedException(ErrorCodeEnum.ExitedSpecialInUsername);
-                }
-                if (!dataInput.Password.CheckPassFormat())
-                {
-                    Log.Information("Password {Password} wrong format!", dataInput.Password);
-                    throw new DefinedException(ErrorCodeEnum.PasswordWrongFormat);
-                }
-                string codeLate = _userRepository.GetAll().OrderBy(x => x.CreatedDate).Last().Code.Base64ToString();
-                var Code = EnumIDGenerate.Staff.GenerateCode(Convert.ToInt32(codeLate) + 1);
-                User user = new User
-                {
-                    Id = Guid.NewGuid(),
-                    Code = Code,
-                    CountryId = dataInput.CountryId,
-                    Username = dataInput.Username,
-                    FullName = dataInput.FullName,
-                    Users = string.Join(_comma, GetUsersNotAssignByGroupsRamdum(UserTypeEnum.Staff, dataInput.CountryId, dataInput.Group).Select(x => x.Code)),
-                    Groups = dataInput.Group,
-                    Address = dataInput.Address,
-                    Email = dataInput.Email,
-                    Phone = dataInput.PhoneNo,
-                    UserType = UserTypeEnum.Staff,
-                    StartDate = dataInput.StartDate,
-                    ExpiredDate = dataInput.ExpiredDate,
-                    Password = string.IsNullOrEmpty(dataInput.Password) ? GeneratePassword() : dataInput.Password,
-                    CreatedBy = requestDto.CurrentUser,
-                };
-                user = _userRepository.Insert(user);
-                //_emailService.SendNewPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, null);
-                Log.Information("Create Manager Admin {Username} Successfully", dataInput.Username);
-                return user.Id;
-            }
-        }
+        public Guid CreateStaff(DataInput<StaffInput> requestDto) => Create(requestDto.CurrentUser, UserTypeEnum.Staff, ErrorCodeEnum.UserStaffExisted, ErrorCodeEnum.EmailStaffExisted, EnumIDGenerate.Staff, requestDto.Dto);
+
+        public Guid CreateEmployee(DataInput<EmployeeInput> requestDto) => Create(requestDto.CurrentUser, UserTypeEnum.Employee, ErrorCodeEnum.UserEmployeeExisted, ErrorCodeEnum.EmailEmployeeExisted, EnumIDGenerate.Employee, requestDto.Dto);
 
         public UserOutput WebLogin(LoginInput requestDto)
         {
@@ -335,9 +227,8 @@ namespace Services.Services
                 case UserTypeEnum.SuperAdmin:
                 case UserTypeEnum.Employee:
                 default:
-                    throw new BadData();
+                    return new List<DropdownList>();
             }
-
         }
 
         private IEnumerable<DropdownList> GetUsersNotAssignByGroupsRamdum(UserTypeEnum type, string countryId, string groups = null)
@@ -365,7 +256,7 @@ namespace Services.Services
                 default:
                 case UserTypeEnum.SuperAdmin:
                 case UserTypeEnum.Employee:
-                    throw new BadData();
+                    return new List<DropdownList>();
             }
             while (flag)
             {
@@ -414,6 +305,64 @@ namespace Services.Services
             return EncryptService.Encrypt(generated);
         }
 
+        private Guid Create (string currentUser, UserTypeEnum userType, ErrorCodeEnum exitedUser, ErrorCodeEnum exitedEmail, EnumIDGenerate genCode, dynamic dataObject)
+        {
+            if (!(dataObject is ManagerInput || dataObject is StaffInput || dataObject is EmployeeInput))
+                throw new BadData();
+            if (ExistedUser(dataObject.Username))
+            {
+                Log.Information("Username {Username} existed!", (string)dataObject.Username);
+                throw new DefinedException(exitedUser);
+            }
+            else
+            {
+                if (CheckAuthority(currentUser, userType))
+                {
+                    Log.Information("Account {Username} not authorized!", currentUser);
+                    throw new DefinedException(ErrorCodeEnum.NotAuthorized);
+                }
+                if (ExisedEmail((string)dataObject.Email))
+                {
+                    Log.Information("Email {Email} existed!", (string)dataObject.Email);
+                    throw new DefinedException(exitedEmail);
+                }
+                if (((string)dataObject.Username).HasSpecial())
+                {
+                    Log.Information("User {Username} wrong format!", (string)dataObject.Username);
+                    throw new DefinedException(ErrorCodeEnum.ExitedSpecialInUsername);
+                }
+                if (!((string)dataObject.Password).CheckPassFormat())
+                {
+                    Log.Information("Password {Password} wrong format!", (string)dataObject.Password);
+                    throw new DefinedException(ErrorCodeEnum.PasswordWrongFormat);
+                }
+                string codeLate = _userRepository.GetAll().OrderBy(x => x.CreatedDate).Last().Code.Base64ToString();
+                var Code = genCode.GenerateCode(Convert.ToInt32(codeLate) + 1);
+                User user = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Code = Code,
+                    CountryId = (string)dataObject.CountryId,
+                    Username = (string)dataObject.Username,
+                    FullName = (string)dataObject.FullName,
+                    Users = dataObject is EmployeeInput ? null : string.Join(_comma, GetUsersNotAssignByGroupsRamdum(userType, (string)dataObject.CountryId, (string)dataObject.Groups).Select(x => x.Code)),
+                    Groups = dataObject is ManagerInput ? (string)dataObject.Groups : (string)dataObject.Group,
+                    Address = (string)dataObject.Address,
+                    Email = (string)dataObject.Email,
+                    Phone = (string)dataObject.PhoneNo,
+                    UserType = userType,
+                    StartDate = (DateTime?)dataObject.StartDate,
+                    ExpiredDate = (DateTime?)dataObject.ExpiredDate,
+                    Password = string.IsNullOrEmpty(dataObject.Password) ? GeneratePassword() : dataObject.Password,
+                    CreatedBy = currentUser,
+                };
+                user = _userRepository.Insert(user);
+                //_emailService.SendNewPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, null);
+                Log.Information("Create " + user.UserTypeStr + ": {Username} Successfully", user.Username);
+                return user.Id;
+            }
+        }
+
         private SearchOutput Search(DataInput<SearchInput> requestDto, UserTypeEnum searchUserType, int fieldNumber)
         {
             if (CheckAuthority(requestDto.CurrentUser, searchUserType))
@@ -458,38 +407,40 @@ namespace Services.Services
         {
             if (user.UserType.Equals(UserTypeEnum.SuperAdmin))
                 searchUserType = user.UserType;
+            if (string.IsNullOrEmpty(user.Users))
+                return null;
             IQueryable<UserOutput> employeeUsers;
             switch (searchUserType)
             {
                 case UserTypeEnum.Manager:
                     var staffUsers = GetAllType(UserTypeEnum.Staff, user.CountryId != null ? user.CountryId : null).Select(row => new UserOutput(row, null));
-                    queryResult = staffUsers.Where(staff => user.Users.SplitTrim(_comma).Any(x => x.Equals(staff.Code)));
-                    break;
+                    return staffUsers.Where(staff => user.Users.SplitTrim(_comma).Any(x => x.Equals(staff.Code)));
                 
                 case UserTypeEnum.Staff:
                     if (user.UserType.Equals(UserTypeEnum.Manager))
                         return SearchAuthority(queryResult, user, user.UserType);
                     employeeUsers = GetAllType(UserTypeEnum.Employee, user.CountryId != null ? user.CountryId : null).Select(row => new UserOutput(row, null));
-                    queryResult = employeeUsers.Where(employee => queryResult.Any(staff => staff.Users.SplitTrim(_comma).Any(x => x.Equals(employee.Code))));
-                    break;
+                    return employeeUsers.Where(employee => queryResult.Where(staff => !string.IsNullOrEmpty(staff.Users)).Any(staff => staff.Users.SplitTrim(_comma).Any(x => x.Equals(employee.Code))));
 
                 case UserTypeEnum.Employee:
                     if (user.UserType.Equals(UserTypeEnum.Manager))
+                    {
                         queryResult = SearchAuthority(queryResult, user, UserTypeEnum.Staff);
+                        user.UserType = UserTypeEnum.Staff;
+                        return SearchAuthority(queryResult, user, user.UserType);
+                    }
                     employeeUsers = GetAllType(UserTypeEnum.Employee, user.CountryId != null ? user.CountryId : null).Select(row => new UserOutput(row, null));
-                    queryResult = employeeUsers.Where(employee => user.Users.SplitTrim(_comma).Any(x => x.Equals(employee.Code)));
-                    return SearchAuthority(queryResult, user, user.UserType);
+                    return employeeUsers.Where(employee => user.Users.SplitTrim(_comma).Any(x => x.Equals(employee.Code)));
 
                 default:
                 case UserTypeEnum.SuperAdmin:
                     return queryResult.ToList().AsQueryable();
             }
-            return queryResult;
         }
 
         private IQueryable<UserOutput> GetUserListByUser(User user)
         {
-            IQueryable<UserOutput> users = GetAllType(user.UserType)
+            IQueryable<UserOutput> users = GetAllType(user.UserType, user.CountryId != null ? user.CountryId : null)
                 .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
             
             switch (user.UserType)

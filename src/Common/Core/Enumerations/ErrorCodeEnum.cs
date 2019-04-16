@@ -19,9 +19,12 @@
         MultiplePasswordResetting = 15,
         UserDeletedOrNotExisted = 16,
         UserManagerExisted = 17,
-        EmailMangerExisted = 18,
-        IncorrectManagerUser = 19,
-        ExitedSpecialInUsername = 20,
-        UserStaffExisted = 21
+        UserStaffExisted = 18,
+        UserEmployeeExisted = 19,
+        EmailManagerExisted = 20,
+        EmailStaffExisted = 21,
+        EmailEmployeeExisted = 22,
+        IncorrectManagerUser = 23,
+        ExitedSpecialInUsername = 24,
     }
 }

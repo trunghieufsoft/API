@@ -58,7 +58,7 @@ namespace Entities.Entities
 
         [StringLength(4096)]
         [Column("USERS_UND_MN")]
-        public string Users { get; set; }
+        public string Users { get; set; } = null;
 
         [Required]
         [StringLength(2048)]

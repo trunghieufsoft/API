@@ -57,6 +57,15 @@ namespace WebApi.Controllers
             return Json(data);
         }
 
+        [HttpPost]
+        [Route("CreateEmployee")]
+        public IActionResult CreateEmployee([FromBody] EmployeeInput requestDto)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            var data = _userService.CreateEmployee(new DataInput<EmployeeInput>(requestDto, GetCurrentUser()));
+            return Json(data);
+        }
+
         [HttpGet]
         [Route("View")]
         public IActionResult View(Guid id)
