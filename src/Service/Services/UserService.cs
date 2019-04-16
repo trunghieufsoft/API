@@ -496,7 +496,9 @@ namespace Services.Services
                     return _userRepository.GetAll().Select(row => new UserOutput(row, null));
             }
         }
+        #endregion
 
+        #region function
         private bool ExistedUser(string username)
             => _userRepository.GetAll().Any(x => x.Username.Equals(username));
 
