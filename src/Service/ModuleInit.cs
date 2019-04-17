@@ -1,7 +1,7 @@
 ﻿using Autofac;
-using Services.Services.Abstractions;
+using Service.Services.Abstractions;
 
-namespace Services
+namespace Service
 {
     public class ModuleInit : Module
     {

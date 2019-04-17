@@ -9,10 +9,9 @@ using Entities.Enumerations;
 using Common.Core.Extensions;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
-using Common.Core.Enumerations;
 using System.Collections.Generic;
 
-namespace Services.Services.Abstractions
+namespace Service.Services.Abstractions
 {
     public abstract class BaseService
     {

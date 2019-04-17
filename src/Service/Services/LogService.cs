@@ -13,11 +13,11 @@ using Common.DTOs.Common;
 using Common.DTOs.LogModel;
 using Database.Repositories;
 using Entities.Entities;
-using Services.Services.Abstractions;
+using Service.Services.Abstractions;
 using Common.Core.Timing;
 using Entities.Enumerations;
 
-namespace Services.Services
+namespace Service.Services
 {
     public class LogService : BaseService, ILogService
     {

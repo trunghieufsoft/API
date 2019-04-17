@@ -1,7 +1,7 @@
 ﻿using Common.Core.Enumerations;
 using Common.DTOs.Common;
 
-namespace Services.Services.Abstractions
+namespace Service.Services.Abstractions
 {
     public interface ILogService
     {

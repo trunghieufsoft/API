@@ -2,7 +2,7 @@
 using Common.DTOs.Common;
 using Common.DTOs.UserModel;
 
-namespace Services.Services.Abstractions
+namespace Service.Services.Abstractions
 {
     public interface IUserService
     {
@@ -11,6 +11,10 @@ namespace Services.Services.Abstractions
         Guid CreateStaff(DataInput<StaffInput> requestDto);
 
         Guid CreateEmployee(DataInput<EmployeeInput> requestDto);
+
+        void AssigneeUser(string currentUser, string username);
+
+        void Delete(Guid id, string currentUser);
 
         UserOutput WebLogin(LoginInput requestDto);
 

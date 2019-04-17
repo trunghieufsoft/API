@@ -15,8 +15,8 @@ using System;
 using System.Text;
 using Common.Core.Timing;
 using Database.EntityFrameworkCore;
-using Services.Services;
-using Services.Services.Abstractions;
+using Service.Services;
+using Service.Services.Abstractions;
 using WebAPI.Infrastructure.Configurations;
 
 namespace WebAPI
@@ -89,7 +89,7 @@ namespace WebAPI
             ContainerBuilder builder = new ContainerBuilder();
             builder.Populate(services);
             builder.RegisterModule<Database.ModuleInit>();
-            builder.RegisterModule<Services.ModuleInit>();
+            builder.RegisterModule<Service.ModuleInit>();
 
             ApplicationContainer = builder.Build();
             provider = new AutofacServiceProvider(ApplicationContainer);

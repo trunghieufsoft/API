@@ -9,7 +9,7 @@ using System.Text;
 using Common.Core.Timing;
 using Common.DTOs.Common;
 using Common.DTOs.UserModel;
-using Services.Services.Abstractions;
+using Service.Services.Abstractions;
 using Entities.Enumerations;
 
 namespace WebApi.Controllers
@@ -19,14 +19,14 @@ namespace WebApi.Controllers
     [ApiController]
     public class UserController : BaseController
     {
-        private readonly IUserService _userService;
         private readonly IConfiguration _config;
+        private readonly IUserService _userService;
         private readonly ISessionService _sessionService;
 
         public UserController(IUserService userService, IConfiguration config, ISessionService sessionService)
         {
-            _userService = userService;
             _config = config;
+            _userService = userService;
             _sessionService = sessionService;
         }
 
@@ -64,6 +64,24 @@ namespace WebApi.Controllers
             _sessionService.CheckSession(GetToken(), GetCurrentUser());
             var data = _userService.CreateEmployee(new DataInput<EmployeeInput>(requestDto, GetCurrentUser()));
             return Json(data);
+        }
+
+        [HttpPut]
+        [Route("AssigneeUser")]
+        public IActionResult AssigneeUser(string username)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            _userService.AssigneeUser(GetCurrentUser(), username);
+            return Json(success);
+        }
+
+        [HttpDelete]
+        [Route("Delete")]
+        public IActionResult Delete(Guid id)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            _userService.Delete(id, GetCurrentUser());
+            return Json(success);
         }
 
         [HttpGet]

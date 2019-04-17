@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using Common.DTOs.SystemConfig;
-using Services.Services.Abstractions;
+using Service.Services.Abstractions;
 using Entities.Enumerations;
 
 namespace WebApi.Controllers

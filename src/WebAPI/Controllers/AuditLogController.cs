@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Common.DTOs.Common;
 using Common.Core.Enumerations;
-using Services.Services.Abstractions;
+using Service.Services.Abstractions;
 
 namespace WebApi.Controllers
 {

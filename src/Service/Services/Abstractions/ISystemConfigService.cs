@@ -2,7 +2,7 @@
 using Entities.Entities;
 using Common.DTOs.SystemConfig;
 
-namespace Services.Services.Abstractions
+namespace Service.Services.Abstractions
 {
     public interface ISystemConfigService
     {

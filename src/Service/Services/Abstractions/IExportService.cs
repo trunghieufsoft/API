@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Common.DTOs.Export;
 
-namespace Services.Services.Abstractions
+namespace Service.Services.Abstractions
 {
     public interface IExportService
     {

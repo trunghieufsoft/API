@@ -7,9 +7,9 @@ using Database.UnitOfWork;
 using Database.Repositories;
 using Common.Core.Exceptions;
 using Common.DTOs.SystemConfig;
-using Services.Services.Abstractions;
+using Service.Services.Abstractions;
 
-namespace Services.Services
+namespace Service.Services
 {
     public class SystemConfigService : BaseService, ISystemConfigService
     {

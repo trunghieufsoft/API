@@ -25,12 +25,13 @@ namespace WebAPI.Infrastructure.Filters
                     break;
 
                 case DefinedException userError:
-                    errorModel = userError.Error;
                     code = (int)HttpStatusCode.OK;
+                    errorModel = userError.Error;
                     Log.Error("Authentication exception has occurred. Details: {Exception}", exception.Message);
                     break;
 
                 case BadData _:
+                    code = (int)HttpStatusCode.BadRequest;
                     errorModel.ErrorCode = (int)HttpStatusCode.BadRequest;
                     errorModel.Message = exception.Message;
                     Log.Error("Validation exception has occurred. Details: {Exception}", exception.Message);
@@ -45,15 +46,16 @@ namespace WebAPI.Infrastructure.Filters
 
                 case SqlException _:
                 case System.Data.SqlClient.SqlException _:
+                    code = (int)HttpStatusCode.BadRequest;
                     errorModel.ErrorCode = (int)HttpStatusCode.BadRequest;
                     errorModel.Message = "Data exception has occurred.";
                     Log.Error("SQL exception has occurred. Details: {Exception}", exception.Message);
                     break;
 
                 default:
+                    code = (int)HttpStatusCode.InternalServerError;
                     errorModel.ErrorCode = (int)HttpStatusCode.BadRequest;
                     errorModel.Message = "Internal Server Error";
-                    code = (int)HttpStatusCode.InternalServerError;
                     Log.Error("Internal server error has occurred. Details: {Exception}", exception);
                     break;
             }

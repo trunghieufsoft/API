@@ -6,9 +6,9 @@ using Database.Repositories;
 using Common.Core.Exceptions;
 using Common.Core.Enumerations;
 using Common.Core.Linq.Extensions;
-using Services.Services.Abstractions;
+using Service.Services.Abstractions;
 
-namespace Services.Services
+namespace Service.Services
 {
     public class SessionService : BaseService, ISessionService
     {

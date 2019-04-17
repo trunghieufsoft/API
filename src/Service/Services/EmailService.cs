@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Serilog;
 using System.Net.Mail;
-using Services.Services.Abstractions;
+using Service.Services.Abstractions;
 
-namespace Services.Services
+namespace Service.Services
 {
     public class EmailService : BaseService, IEmailService
     {

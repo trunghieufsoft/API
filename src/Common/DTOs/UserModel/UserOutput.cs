@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Entities.Entities;
 using Entities.Enumerations;
 
@@ -10,7 +9,7 @@ namespace Common.DTOs.UserModel
     {
         public int Manager { get; set; }
         public int Staff { get; set; }
-        public int Customer { get; set; }
+        public int Employee { get; set; }
     }
     #endregion
 
@@ -20,25 +19,18 @@ namespace Common.DTOs.UserModel
         {
             Id = user.Id;
             Code = user.Code;
+            CountryId = user.CountryId;
+            UserType = user.UserTypeStr;
             Username = user.Username;
             FullName = user.FullName;
-            CountryId = user.CountryId;
             Groups = user.Groups;
             GroupName = group != null ? group.GroupName : null;
             Users = user.Users;
-            UserType = user.UserTypeStr;
             Status = user.Status;
             StatusStr = user.StatusStr;
-            StartDate = user.StartDate;
-            ExpiredDate = user.ExpiredDate;
-            Email = user.Email;
-            Address = user.Address;
-            Phone = user.Phone;
-            CreatedBy = user.CreatedBy;
-            CreatedDate = user.CreatedDate;
-            LasUpdatedBy = user.LastUpdatedBy;
-            LasUpdatedDate = user.LastUpdateDate;
-            PasswordLastUpdate = user.PasswordLastUdt;
+            ExpiredIn = user.UserType.Equals(UserTypeEnum.SuperAdmin) ? "(--)" : (user.ExpiredDate.Value - user.StartDate.Value).TotalDays.ToString();
+            AddressInfo = new AddressInfo(user);
+            InitializeInfo = new InitializeInfo(user);
         }
 
         #region Properties
@@ -50,21 +42,43 @@ namespace Common.DTOs.UserModel
         public string Groups { get; set; }
         public string GroupName { get; set; }
         public string Users { get; set; }
-        public string Email { get; set; }
-        public string Phone { get; set; }
-        public string Address { get; set; }
         public string UserType { get; set; }
         public StatusEnum Status { get; set; }
         public string StatusStr { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? ExpiredDate { get; set; }
+        public string ExpiredIn { get; set; }
+        public AddressInfo AddressInfo { get; set; }
         public string ExpiredPassword { get; set; }
+        public InitializeInfo InitializeInfo { get; set; }
+        #endregion
+    }
+
+    public class AddressInfo
+    {
+        public AddressInfo(User user)
+        {
+            Email = user.Email;
+            Address = user.Address;
+            Phone = user.Phone;
+        }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+        public string Address { get; set; }
+    }
+
+    public class InitializeInfo
+    {
+        public InitializeInfo(User user)
+        {
+            CreatedBy = user.CreatedBy;
+            CreatedDate = user.CreatedDate;
+            LasUpdatedBy = user.LastUpdatedBy;
+            LasUpdatedDate = user.LastUpdateDate;
+            PasswordLastUpdate = user.PasswordLastUdt;
+        }
         public string CreatedBy { get; set; }
         public DateTime? CreatedDate { get; set; }
         public string LasUpdatedBy { get; set; }
         public DateTime? LasUpdatedDate { get; set; }
         public DateTime? PasswordLastUpdate { get; set; }
-        #endregion
-        
     }
 }

@@ -26,5 +26,7 @@
         EmailEmployeeExisted = 22,
         IncorrectManagerUser = 23,
         ExitedSpecialInUsername = 24,
+        CannotUpdateUsers = 25,
+        CannotAssignee = 26,
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Entities.Entities;
 using System;
 
-namespace Services.Services.Abstractions
+namespace Service.Services.Abstractions
 {
     public interface ISessionService
     {

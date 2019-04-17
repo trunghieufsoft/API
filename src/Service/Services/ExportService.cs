@@ -4,9 +4,9 @@ using OfficeOpenXml;
 using Common.DTOs.Export;
 using Common.DTOs.Report;
 using System.Collections.Generic;
-using Services.Services.Abstractions;
+using Service.Services.Abstractions;
 
-namespace Services.Services
+namespace Service.Services
 {
     public class ExportService : BaseService, IExportService
     {
