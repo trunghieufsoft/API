@@ -13,6 +13,7 @@
 
         public T Dto { get; set; }
     }
+
     public class DataInput<TData, TProperties>
     {
         public DataInput() { }

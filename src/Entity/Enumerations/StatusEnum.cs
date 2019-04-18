@@ -4,8 +4,9 @@
     {
         Active = 0,
         Inactive = 1,
-        Unavailable = 2,
+        Available = 2,
+        Unavailable = 3,
 
-        EndOfDate = 3,
+        EndOfDate = 4,
     }
 }

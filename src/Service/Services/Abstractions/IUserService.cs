@@ -14,6 +14,8 @@ namespace Service.Services.Abstractions
 
         void AssigneeUser(string currentUser, string username);
 
+        void Update(UpdateInput updateInput);
+
         void Delete(Guid id, string currentUser);
 
         UserOutput WebLogin(LoginInput requestDto);
@@ -31,5 +33,7 @@ namespace Service.Services.Abstractions
         SearchOutput SearchStaff(DataInput<SearchInput> requestDto);
 
         SearchOutput SearchEmployee(DataInput<SearchInput> requestDto);
+
+        void AllowUnselectGroups(UnselectGroupsInput requestDto);
     }
 }

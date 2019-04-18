@@ -81,6 +81,9 @@ namespace Service.Services
             }
         }
 
+        public void Update(UpdateInput updateInput)
+            => Update(updateInput, updateInput.DataUpdate is ManagerUpdateInput ? ErrorCodeEnum.EmailManagerExisted : updateInput.DataUpdate is StaffUpdateInput ? ErrorCodeEnum.EmailStaffExisted : ErrorCodeEnum.EmailEmployeeExisted);
+
         public void Delete(Guid id, string currentUser)
         {
             var user = _userRepository.GetById(id);
@@ -110,7 +113,7 @@ namespace Service.Services
             if (row == null)
             {
                 Log.Error("User Not Found");
-                throw new DefinedException(ErrorCodeEnum.IncorrectManagerUser);
+                throw new DefinedException(ErrorCodeEnum.UserNotFound);
             }
             return new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null);
         }
@@ -142,6 +145,16 @@ namespace Service.Services
 
         public SearchOutput SearchEmployee(DataInput<SearchInput> requestDto)
             => Search(requestDto, UserTypeEnum.Employee, 5);
+
+        public void AllowUnselectGroups(UnselectGroupsInput input)
+        {
+            User user = _userRepository.GetById(input.Id);
+            if (!AllowUnselectGroups(input.Country ?? user.CountryId, input.Groups ?? user.Groups, input.Users ?? user.Users, user))
+            {
+                Log.Information("Cannot unselect the group from the list!", ErrorCodeEnum.CannotUnSelectGroup);
+                throw new DefinedException(ErrorCodeEnum.CannotUnSelectGroup);
+            }
+        }
 
         public void UpdateToken(Guid userid, string token)
         {
@@ -205,7 +218,7 @@ namespace Service.Services
             }
             else
             {
-                Log.Information("User does not existed! { requestDto }", ErrorCodeEnum.IncorrectUser);
+                Log.Information("User does not existed!", ErrorCodeEnum.IncorrectUser);
                 throw new DefinedException(ErrorCodeEnum.IncorrectUser);
             }
         }
@@ -424,6 +437,7 @@ namespace Service.Services
                     Email = (string)dataObject.Email,
                     Phone = (string)dataObject.PhoneNo,
                     UserType = userType,
+                    Status = dataObject is EmployeeInput ? StatusEnum.Available : StatusEnum.Active,
                     StartDate = (DateTime?)dataObject.StartDate,
                     ExpiredDate = (DateTime?)dataObject.ExpiredDate,
                     Password = string.IsNullOrEmpty(dataObject.Password) ? GeneratePassword() : dataObject.Password,
@@ -433,6 +447,89 @@ namespace Service.Services
                 //_emailService.SendNewPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, null);
                 Log.Information("Create " + user.UserTypeStr + ": {Username} Successfully", user.Username);
                 return user.Id;
+            }
+        }
+
+        private bool AllowUnselectGroups(string country, string groups, string users, User user)
+        {
+            bool returnResult = true;
+            if (!user.CountryId.Equals(country))
+                return returnResult;
+            var userArr = users.SplitTrim(_comma);
+            var groupsArr = groups.SplitTrim(_comma);
+            //check has any account used user?
+            if (!user.UserType.Equals(UserTypeEnum.SuperAdmin))
+            {
+                UserTypeEnum typeParent = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), Enum.GetName(typeof(UserTypeEnum), (int)user.UserType - 1), true);
+                IEnumerable<User> listUserParent = GetAllType(typeParent, country);
+                returnResult = !listUserParent.Any(u => u.Users.SplitTrim(_comma).Any(x => user.Code.Equals(x)));
+            }
+
+            //check user list has reference to groups
+            if (!user.UserType.Equals(UserTypeEnum.Employee) && returnResult)
+            {
+                UserTypeEnum typeChildren = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), Enum.GetName(typeof(UserTypeEnum), (int)user.UserType + 1), true);
+                IEnumerable<User> listUserChildren = GetAllType(typeChildren, country);
+                returnResult = listUserChildren.Where(u => userArr.Any(x => u.Code.Equals(x))).Any(u => groupsArr.Any(x => u.Groups.Equals(x)));
+            }
+            return returnResult;
+        }
+
+        private void Update(UpdateInput requestDto, ErrorCodeEnum exitedEmail)
+        {
+            dynamic dataInput = requestDto.DataUpdate;
+            if (!(dataInput is ManagerUpdateInput || dataInput is StaffUpdateInput || dataInput is EmployeeUpdateInput))
+                throw new BadData();
+            User user = _userRepository.GetById((Guid)dataInput.Id);
+            if (user != null)
+            {
+                if (ExisedEmail((string)dataInput.Email))
+                {
+                    Log.Information("Email {Email} existed!", (string)dataInput.Email);
+                    throw new DefinedException(exitedEmail);
+                }
+                #region handle variable
+                bool dataStatus = (user.ExpiredDate.Value - DateTime.Now).TotalDays < 0 ? false : (bool)dataInput.Status;
+                StatusEnum valueType = dataStatus
+                    ? dataInput is EmployeeUpdateInput ? StatusEnum.Available : StatusEnum.Active
+                    : dataInput is EmployeeUpdateInput ? StatusEnum.Unavailable : StatusEnum.Inactive;
+                if (!AllowUnselectGroups((string)dataInput.CountryId, dataInput is ManagerUpdateInput ? (string)dataInput.Groups : (string)dataInput.Group, (string)dataInput.Users, user))
+                {
+                    Log.Information("Cannot unselect the group from the list!", ErrorCodeEnum.CannotUnSelectGroup);
+                    throw new DefinedException(ErrorCodeEnum.CannotUnSelectGroup);
+                }
+
+                #endregion
+
+                #region update user
+                user.Status = valueType;
+                user.CountryId = (string)dataInput.CountryId;
+                user.FullName = (string)dataInput.FullName;
+                user.Groups = dataInput is ManagerUpdateInput ? (string)dataInput.Groups : (string)dataInput.Group;
+                user.Users = dataInput is EmployeeUpdateInput ? null : user.CountryId.Equals((string)dataInput.CountryId) ? (string)dataInput.Users : string.Empty;
+                user.Address = (string)dataInput.AddressInfo.Address;
+                user.Phone = (string)dataInput.AddressInfo.PhoneNo;
+                user.Email = (string)dataInput.AddressInfo.Email;
+                user.ExpiredDate = (DateTime?)dataInput.ExpiredDate;
+                user.LastUpdatedBy = (string)dataInput.CurrentUser;
+                user.LastUpdateDate = DateTime.Now;
+                #endregion
+
+                try
+                {
+                    _unitOfWork.Update(user);
+                    _unitOfWork.Commit();
+                }
+                catch
+                {
+                    Log.Information("Cannot Update " + user.UserTypeStr + ": {Username}.", user.Username);
+                    throw new DefinedException(ErrorCodeEnum.CannotUpdateUsers);
+                }
+            }
+            else
+            {
+                Log.Information("Not Found User: {Username}.", (string)dataInput.Username);
+                throw new DefinedException(ErrorCodeEnum.UserNotFound);
             }
         }
 
