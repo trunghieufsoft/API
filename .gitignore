@@ -58,8 +58,9 @@ dkms.conf
 *.sln.docstates
 
 # Text
-*txt
+*.txt
 
+**/config
 **/sqlite3
 **/obj
 **/netcoreapp2.2

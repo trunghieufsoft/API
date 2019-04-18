@@ -1,5 +1,4 @@
 ﻿using System;
-using Entities.Enumerations;
 using System.ComponentModel.DataAnnotations;
 
 namespace Common.DTOs.UserModel

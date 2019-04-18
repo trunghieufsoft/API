@@ -75,6 +75,33 @@ namespace WebApi.Controllers
             return Json(success);
         }
 
+        [HttpPost]
+        [Route("UpdateManager")]
+        public IActionResult UpdateManager([FromBody] ManagerUpdateInput requestDto)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            _userService.Update(new UpdateInput(requestDto, GetCurrentUser()));
+            return Json(success);
+        }
+
+        [HttpPost]
+        [Route("UpdateStaff")]
+        public IActionResult UpdateStaff([FromBody] StaffUpdateInput requestDto)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            _userService.Update(new UpdateInput(requestDto, GetCurrentUser()));
+            return Json(success);
+        }
+
+        [HttpPost]
+        [Route("UpdateEmployee")]
+        public IActionResult UpdateEmployee([FromBody] EmployeeUpdateInput requestDto)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            _userService.Update(new UpdateInput(requestDto, GetCurrentUser()));
+            return Json(success);
+        }
+
         [HttpDelete]
         [Route("Delete")]
         public IActionResult Delete(Guid id)
@@ -130,6 +157,15 @@ namespace WebApi.Controllers
                 Dto = searchInput
             };
             return Json(_userService.SearchEmployee(requestDto));
+        }
+        
+        [HttpPost]
+        [Route("AllowUnselectGroups")]
+        public IActionResult AllowUnselectGroups([FromBody] UnselectGroupsInput requestDto)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            _userService.AllowUnselectGroups(requestDto);
+            return Json(success);
         }
 
         [HttpGet]

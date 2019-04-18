@@ -24,9 +24,12 @@
         EmailManagerExisted = 20,
         EmailStaffExisted = 21,
         EmailEmployeeExisted = 22,
-        IncorrectManagerUser = 23,
+        UserNotFound = 23,
         ExitedSpecialInUsername = 24,
         CannotUpdateUsers = 25,
         CannotAssignee = 26,
+        ManagerIsCurrentlyInactive = 27,
+        StaffIsCurrentlyInactive = 28,
+        CannotUnSelectGroup = 29,
     }
 }

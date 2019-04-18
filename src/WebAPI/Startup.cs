@@ -39,7 +39,7 @@ namespace WebAPI
             options.TimeStamp.NonClusteredIndex = true;
             Log.Logger = new Serilog.LoggerConfiguration()
                 .MinimumLevel.Information()
-                .WriteTo.RollingFile("Log-{Date}.txt", retainedFileCountLimit: 2)
+                //.WriteTo.RollingFile("Log-{Date}.txt", retainedFileCountLimit: 2)
                 .WriteTo.MSSqlServer(connectionString: logDB, tableName: logTable, columnOptions: options, restrictedToMinimumLevel: LogEventLevel.Information)
                 .CreateLogger();
 

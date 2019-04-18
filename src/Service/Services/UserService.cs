@@ -81,6 +81,9 @@ namespace Service.Services
             }
         }
 
+        public void Update(UpdateInput updateInput)
+            => Update(updateInput, updateInput.DataUpdate is ManagerUpdateInput ? ErrorCodeEnum.EmailManagerExisted : updateInput.DataUpdate is StaffUpdateInput ? ErrorCodeEnum.EmailStaffExisted : ErrorCodeEnum.EmailEmployeeExisted);
+
         public void Delete(Guid id, string currentUser)
         {
             var user = _userRepository.GetById(id);
@@ -91,7 +94,7 @@ namespace Service.Services
             }
             string value = Enum.GetName(typeof(UserTypeEnum), (int)user.UserType - 1);
             UserTypeEnum typeParent = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), value, true);
-            if (allowDeleteUser(typeParent, user))
+            if (AllowDeleteUser(typeParent, user))
             {
                 _unitOfWork.Delete(user);
                 _unitOfWork.Commit();
@@ -110,7 +113,7 @@ namespace Service.Services
             if (row == null)
             {
                 Log.Error("User Not Found");
-                throw new DefinedException(ErrorCodeEnum.IncorrectManagerUser);
+                throw new DefinedException(ErrorCodeEnum.UserNotFound);
             }
             return new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null);
         }
@@ -130,8 +133,8 @@ namespace Service.Services
 
         public string GetSubcriseToken(Guid userid)
         {
-            var user = _userRepository.GetById(userid);
-            return user != null ? user.SubcriseToken : null;
+            User user = _userRepository.GetById(userid);
+            return user?.SubcriseToken;
         }
 
         public SearchOutput SearchManager(DataInput<SearchInput> requestDto)
@@ -142,6 +145,16 @@ namespace Service.Services
 
         public SearchOutput SearchEmployee(DataInput<SearchInput> requestDto)
             => Search(requestDto, UserTypeEnum.Employee, 5);
+
+        public void AllowUnselectGroups(UnselectGroupsInput input)
+        {
+            User user = _userRepository.GetById(input.Id);
+            if (!AllowUnselectGroups(input.Country ?? user.CountryId, input.Groups ?? user.Groups, input.Users ?? user.Users, user))
+            {
+                Log.Information("Cannot unselect the group from the list!", ErrorCodeEnum.CannotUnSelectGroup);
+                throw new DefinedException(ErrorCodeEnum.CannotUnSelectGroup);
+            }
+        }
 
         public void UpdateToken(Guid userid, string token)
         {
@@ -205,7 +218,7 @@ namespace Service.Services
             }
             else
             {
-                Log.Information("User does not existed! { requestDto }", ErrorCodeEnum.IncorrectUser);
+                Log.Information("User does not existed!", ErrorCodeEnum.IncorrectUser);
                 throw new DefinedException(ErrorCodeEnum.IncorrectUser);
             }
         }
@@ -424,6 +437,7 @@ namespace Service.Services
                     Email = (string)dataObject.Email,
                     Phone = (string)dataObject.PhoneNo,
                     UserType = userType,
+                    Status = dataObject is EmployeeInput ? StatusEnum.Available : StatusEnum.Active,
                     StartDate = (DateTime?)dataObject.StartDate,
                     ExpiredDate = (DateTime?)dataObject.ExpiredDate,
                     Password = string.IsNullOrEmpty(dataObject.Password) ? GeneratePassword() : dataObject.Password,
@@ -433,6 +447,89 @@ namespace Service.Services
                 //_emailService.SendNewPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, null);
                 Log.Information("Create " + user.UserTypeStr + ": {Username} Successfully", user.Username);
                 return user.Id;
+            }
+        }
+
+        private bool AllowUnselectGroups(string country, string groups, string users, User user)
+        {
+            bool returnResult = true;
+            if (!user.CountryId.Equals(country))
+                return returnResult;
+            var userArr = users.SplitTrim(_comma);
+            var groupsArr = groups.SplitTrim(_comma);
+            //check has any account used user?
+            if (!user.UserType.Equals(UserTypeEnum.SuperAdmin))
+            {
+                UserTypeEnum typeParent = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), Enum.GetName(typeof(UserTypeEnum), (int)user.UserType - 1), true);
+                IEnumerable<User> listUserParent = GetAllType(typeParent, country);
+                returnResult = !listUserParent.Any(u => u.Users.SplitTrim(_comma).Any(x => user.Code.Equals(x)));
+            }
+
+            //check user list has reference to groups
+            if (!user.UserType.Equals(UserTypeEnum.Employee) && returnResult)
+            {
+                UserTypeEnum typeChildren = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), Enum.GetName(typeof(UserTypeEnum), (int)user.UserType + 1), true);
+                IEnumerable<User> listUserChildren = GetAllType(typeChildren, country);
+                returnResult = listUserChildren.Where(u => userArr.Any(x => u.Code.Equals(x))).Any(u => groupsArr.Any(x => u.Groups.Equals(x)));
+            }
+            return returnResult;
+        }
+
+        private void Update(UpdateInput requestDto, ErrorCodeEnum exitedEmail)
+        {
+            dynamic dataInput = requestDto.DataUpdate;
+            if (!(dataInput is ManagerUpdateInput || dataInput is StaffUpdateInput || dataInput is EmployeeUpdateInput))
+                throw new BadData();
+            User user = _userRepository.GetById((Guid)dataInput.Id);
+            if (user != null)
+            {
+                if (ExisedEmail((string)dataInput.Email))
+                {
+                    Log.Information("Email {Email} existed!", (string)dataInput.Email);
+                    throw new DefinedException(exitedEmail);
+                }
+                #region handle variable
+                bool dataStatus = (user.ExpiredDate.Value - DateTime.Now).TotalDays < 0 ? false : (bool)dataInput.Status;
+                StatusEnum valueType = dataStatus
+                    ? dataInput is EmployeeUpdateInput ? StatusEnum.Available : StatusEnum.Active
+                    : dataInput is EmployeeUpdateInput ? StatusEnum.Unavailable : StatusEnum.Inactive;
+                if (!AllowUnselectGroups((string)dataInput.CountryId, dataInput is ManagerUpdateInput ? (string)dataInput.Groups : (string)dataInput.Group, (string)dataInput.Users, user))
+                {
+                    Log.Information("Cannot unselect the group from the list!", ErrorCodeEnum.CannotUnSelectGroup);
+                    throw new DefinedException(ErrorCodeEnum.CannotUnSelectGroup);
+                }
+
+                #endregion
+
+                #region update user
+                user.Status = valueType;
+                user.CountryId = (string)dataInput.CountryId;
+                user.FullName = (string)dataInput.FullName;
+                user.Groups = dataInput is ManagerUpdateInput ? (string)dataInput.Groups : (string)dataInput.Group;
+                user.Users = dataInput is EmployeeUpdateInput ? null : user.CountryId.Equals((string)dataInput.CountryId) ? (string)dataInput.Users : string.Empty;
+                user.Address = (string)dataInput.AddressInfo.Address;
+                user.Phone = (string)dataInput.AddressInfo.PhoneNo;
+                user.Email = (string)dataInput.AddressInfo.Email;
+                user.ExpiredDate = (DateTime?)dataInput.ExpiredDate;
+                user.LastUpdatedBy = (string)dataInput.CurrentUser;
+                user.LastUpdateDate = DateTime.Now;
+                #endregion
+
+                try
+                {
+                    _unitOfWork.Update(user);
+                    _unitOfWork.Commit();
+                }
+                catch
+                {
+                    Log.Information("Cannot Update " + user.UserTypeStr + ": {Username}.", user.Username);
+                    throw new DefinedException(ErrorCodeEnum.CannotUpdateUsers);
+                }
+            }
+            else
+            {
+                Log.Information("Not Found User: {Username}.", (string)dataInput.Username);
+                throw new DefinedException(ErrorCodeEnum.UserNotFound);
             }
         }
 
@@ -450,7 +547,7 @@ namespace Service.Services
             List<Expression<Func<UserOutput, bool>>> listExpresion = GetExpressions<UserOutput>(requestDto.Dto, fieldNumber);
 
             var user = GetUserContact(requestDto.CurrentUser);
-            IQueryable<UserOutput> queryResult = GetAllType(user.UserType.Equals(UserTypeEnum.SuperAdmin) ? searchUserType : user.UserType, user.CountryId != null ? user.CountryId : null)
+            IQueryable<UserOutput> queryResult = GetAllType(user.UserType.Equals(UserTypeEnum.SuperAdmin) ? searchUserType : user.UserType, user.CountryId ?? null)
                 .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
 
             if (queryResult == null)
@@ -485,14 +582,14 @@ namespace Service.Services
             switch (searchUserType)
             {
                 case UserTypeEnum.Manager:
-                    var staffUsers = GetAllType(UserTypeEnum.Staff, user.CountryId != null ? user.CountryId : null)
+                    var staffUsers = GetAllType(UserTypeEnum.Staff, user.CountryId ?? null)
                         .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
                     return staffUsers.Where(staff => user.Users.SplitTrim(_comma).Any(x => x.Equals(staff.Code)));
 
                 case UserTypeEnum.Staff:
                     if (user.UserType.Equals(UserTypeEnum.Manager))
                         return SearchAuthority(queryResult, user, user.UserType);
-                    IEnumerable<UserOutput> employeeUsers = GetAllType(UserTypeEnum.Employee, user.CountryId != null ? user.CountryId : null)
+                    IEnumerable<UserOutput> employeeUsers = GetAllType(UserTypeEnum.Employee, user.CountryId ?? null)
                         .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
                     IEnumerable<UserOutput> filterStaff = queryResult.Where(staff => !string.IsNullOrEmpty(staff.Users)).ToList();
                     if (filterStaff.Count() == 0)
@@ -507,7 +604,7 @@ namespace Service.Services
                         user.UserType = UserTypeEnum.Staff;
                         return SearchAuthority(queryResult, user, user.UserType);
                     }
-                    IQueryable<UserOutput> employeeUser = GetAllType(UserTypeEnum.Employee, user.CountryId != null ? user.CountryId : null).Select(row => new UserOutput(row, null));
+                    IQueryable<UserOutput> employeeUser = GetAllType(UserTypeEnum.Employee, user.CountryId ?? null).Select(row => new UserOutput(row, null));
                     return employeeUser.Where(employee => user.Users.SplitTrim(_comma).Any(x => x.Equals(employee.Code)));
 
                 default:
@@ -518,7 +615,7 @@ namespace Service.Services
 
         private IQueryable<UserOutput> GetUserListByUser(User user)
         {
-            IQueryable<UserOutput> users = GetAllType(user.UserType, user.CountryId != null ? user.CountryId : null)
+            IQueryable<UserOutput> users = GetAllType(user.UserType, user.CountryId ?? null)
                 .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
 
             switch (user.UserType)
@@ -569,7 +666,7 @@ namespace Service.Services
             }
         }
 
-        private bool allowDeleteUser(UserTypeEnum type, User user)
+        private bool AllowDeleteUser(UserTypeEnum type, User user)
             => !(string.IsNullOrEmpty(user.Users) ||
             GetAllType(type, user.CountryId).Where(u => !string.IsNullOrEmpty(u.Users)).Any(u => u.Users.SplitTrim(_comma).Any(x => x.Equals(user.Code))));
 
