@@ -7,9 +7,16 @@ namespace Common.DTOs.UserModel
     #region Count Total Users
     public class CountTotalUsers
     {
-        public int Manager { get; set; }
-        public int Staff { get; set; }
-        public int Employee { get; set; }
+        public CountTotalUsers(int manager = 0, int staff = 0, int employee = 0)
+        {
+            Manager = manager;
+            Staff = staff;
+            Employee = employee;
+        }
+
+        public int Manager { get; set; } = 0;
+        public int Staff { get; set; } = 0;
+        public int Employee { get; set; } = 0;
     }
     #endregion
 

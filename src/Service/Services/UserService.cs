@@ -124,7 +124,7 @@ namespace Service.Services
             User user = _userRepository.GetAll().FindField(x => x.Username.Equals(currentUser));
             var allUsers = GetUserListByUser(user);
 
-            return allUsers != null ? new CountTotalUsers
+            return allUsers.ToList().Count() > 0 ? new CountTotalUsers
             {
                 Manager = allUsers.Where(x => x.UserType.Equals(UserTypeEnum.Manager.ToString())).Count(),
                 Staff = allUsers.Where(x => x.UserType.Equals(UserTypeEnum.Staff.ToString())).Count(),
@@ -584,7 +584,7 @@ namespace Service.Services
         {
             if (CheckAuthority(requestDto.CurrentUser, searchUserType))
             {
-                return ApplyPaging(requestDto.Dto, null);
+                return ApplyPaging(requestDto.Dto, new List<UserOutput>().AsQueryable());
             }
             if (requestDto.Dto != null)
             {
@@ -598,7 +598,7 @@ namespace Service.Services
                 .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
 
             if (queryResult == null)
-                return ApplyPaging(requestDto.Dto, null);
+                return ApplyPaging(requestDto.Dto, new List<UserOutput>().AsQueryable());
 
             queryResult = SearchAuthority(queryResult, user, searchUserType);
             if (listExpresion != null)
@@ -670,7 +670,8 @@ namespace Service.Services
                 case UserTypeEnum.Manager:
                     IQueryable<UserOutput> Staff = SearchAuthority(users, user, UserTypeEnum.Staff);
                     IQueryable<UserOutput> Employee = SearchAuthority(users, user, UserTypeEnum.Employee);
-                    return Staff.Union(Employee);
+                    var result = Staff.Union(Employee);
+                    return result;
 
                 case UserTypeEnum.Staff:
                     return SearchAuthority(users, user, UserTypeEnum.Employee);
@@ -702,7 +703,7 @@ namespace Service.Services
             {
                 case UserTypeEnum.Manager:
                 case UserTypeEnum.Staff:
-                    return (int)userType > (int)type;
+                    return (int)userType >= (int)type;
 
                 case UserTypeEnum.Employee:
                     return true;
