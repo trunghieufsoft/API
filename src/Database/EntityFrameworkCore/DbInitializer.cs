@@ -22,8 +22,10 @@ namespace Database.EntityFrameworkCore
             _configuration = configuration;
         }
 
+        #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public async Task Seed()
         {
+        #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
             var change = false;
             
             if (!_context.Users.Any(x => x.UserType == UserTypeEnum.SuperAdmin))
@@ -69,52 +71,28 @@ namespace Database.EntityFrameworkCore
                     new Country(){CountryId="AU",CountryName="Australia",CurrencyName="AUD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="BN",CountryName="Brunei",CurrencyName="BND",Region="APAC",CurrencySig="B$"},
                     new Country(){CountryId="BT",CountryName="Bhutan",CurrencyName="BTN",Region="APAC",CurrencySig="Nu"},
-                    new Country(){CountryId="CC",CountryName="Cocos Islands",CurrencyName="AUD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="CK",CountryName="Cook Islands",CurrencyName="NZD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="CN",CountryName="Christmas Island",CurrencyName="AUD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="CX",CountryName="Christmas Island",CurrencyName="AUD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="FJ",CountryName="Fiji",CurrencyName="FJD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="FM",CountryName="Micronesia",CurrencyName="USD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="GU",CountryName="Guam",CurrencyName="USD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="HK",CountryName="Hong Kong",CurrencyName="HKD",Region="APAC",CurrencySig="₣"},
-                    new Country(){CountryId="HM",CountryName="Heard and McDonald Islands",CurrencyName="AUD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="ID",CountryName="Indonesia",CurrencyName="IDR",Region="APAC",CurrencySig="Rp"},
                     new Country(){CountryId="JP",CountryName="Japan",CurrencyName="JPY",Region="APAC",CurrencySig="¥"},
                     new Country(){CountryId="KH",CountryName="Kampuchea",CurrencyName="KHR",Region="APAC",CurrencySig="CR"},
-                    new Country(){CountryId="KI",CountryName="Kiribati",CurrencyName="AUD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="KR",CountryName="Korea (South)",CurrencyName="KRW",Region="APAC",CurrencySig="₩"},
                     new Country(){CountryId="LA",CountryName="Laos",CurrencyName="LAK",Region="APAC",CurrencySig="₭"},
-                    new Country(){CountryId="MH",CountryName="Marshall Islands",CurrencyName="",Region="APAC",CurrencySig=""},
                     new Country(){CountryId="MM",CountryName="Myanmar",CurrencyName="MMK",Region="APAC",CurrencySig="K"},
                     new Country(){CountryId="MN",CountryName="Mongolia",CurrencyName="MNT",Region="APAC",CurrencySig="₮"},
                     new Country(){CountryId="MO",CountryName="Macao",CurrencyName="MOP",Region="APAC",CurrencySig="MOP$"},
-                    new Country(){CountryId="MP",CountryName="Northern Marianas Islands",CurrencyName="USD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="MY",CountryName="Malaysia",CurrencyName="MYR",Region="APAC",CurrencySig="RM"},
                     new Country(){CountryId="NC",CountryName="New Caledonia",CurrencyName="CFP",Region="APAC",CurrencySig="₣"},
-                    new Country(){CountryId="NF",CountryName="Norfolk Island",CurrencyName="AUD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="NR",CountryName="Nauru",CurrencyName="AUD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="NU",CountryName="Niue",CurrencyName="NZD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="NZ",CountryName="New Zealand",CurrencyName="NZD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="P1",CountryName="Minor Pacific Islands",CurrencyName="",Region="APAC",CurrencySig=""},
                     new Country(){CountryId="P2",CountryName="French Polynesia & New Caledonia",CurrencyName="CFP",Region="APAC",CurrencySig="₣"},
                     new Country(){CountryId="PF",CountryName="Polynesia (French)",CurrencyName="CFP",Region="APAC",CurrencySig="₣"},
-                    new Country(){CountryId="PG",CountryName="Papua Niu Gini",CurrencyName="PGK",Region="APAC",CurrencySig="K"},
                     new Country(){CountryId="PH",CountryName="Philippines",CurrencyName="PHP",Region="APAC",CurrencySig="₱"},
                     new Country(){CountryId="PN",CountryName="Pitcairn",CurrencyName="NZD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="PW",CountryName="Palau",CurrencyName="USD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="SB",CountryName="Solomon Islands",CurrencyName="SBD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="SG",CountryName="Singapore",CurrencyName="SGD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="TH",CountryName="Thai Lan",CurrencyName="Baht",Region="APAC",CurrencySig=""},
-                    new Country(){CountryId="TK",CountryName="Tokelau",CurrencyName="NZD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="TL",CountryName="East Timor",CurrencyName="USD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="TO",CountryName="Tonga",CurrencyName="TOP",Region="APAC",CurrencySig="T$"},
-                    new Country(){CountryId="TV",CountryName="Tuvalu",CurrencyName="TVD",Region="APAC",CurrencySig="$"},
-                    new Country(){CountryId="TW",CountryName="Taiwan",CurrencyName="TWD",Region="APAC",CurrencySig=" NT$"},
-                    new Country(){CountryId="UM",CountryName="U.S. Oceania",CurrencyName="TWD",Region="APAC",CurrencySig="$"},
                     new Country(){CountryId="VN",CountryName="Viet Nam",CurrencyName="VND",Region="APAC",CurrencySig="₫"},
-                    new Country(){CountryId="VU",CountryName="Vanuatu",CurrencyName="VUV",Region="APAC",CurrencySig="VT"},
-                    new Country(){CountryId="WF",CountryName="Wallis & Futuna",CurrencyName="CFP",Region="APAC",CurrencySig="₣"},
-                    new Country(){CountryId="WS",CountryName="Samoa (Western)",CurrencyName="USD",Region="APAC",CurrencySig="$"},
                 };
                 _context.Countries.AddRange(listCountry);
                 change = true;

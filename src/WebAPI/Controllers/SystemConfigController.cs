@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using Common.DTOs.SystemConfig;
+using Common.DTOs.SystemConfigModel;
 using Service.Services.Abstractions;
 using Entities.Enumerations;
 

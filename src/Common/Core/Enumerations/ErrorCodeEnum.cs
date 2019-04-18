@@ -27,7 +27,7 @@
         UserNotFound = 23,
         ExitedSpecialInUsername = 24,
         CannotUpdateUsers = 25,
-        CannotAssignee = 26,
+        CannotUserAssignment = 26,
         ManagerIsCurrentlyInactive = 27,
         StaffIsCurrentlyInactive = 28,
         CannotUnSelectGroup = 29,

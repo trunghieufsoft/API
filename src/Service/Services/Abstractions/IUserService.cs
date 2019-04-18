@@ -12,7 +12,7 @@ namespace Service.Services.Abstractions
 
         Guid CreateEmployee(DataInput<EmployeeInput> requestDto);
 
-        void AssigneeUser(string currentUser, string username);
+        void AssignUsers(string currentUser, string username);
 
         void Update(UpdateInput updateInput);
 
@@ -35,5 +35,7 @@ namespace Service.Services.Abstractions
         SearchOutput SearchEmployee(DataInput<SearchInput> requestDto);
 
         void AllowUnselectGroups(UnselectGroupsInput requestDto);
+
+        void ChangePassword(DataInput<ChangePasswordInput> requestDto);
     }
 }

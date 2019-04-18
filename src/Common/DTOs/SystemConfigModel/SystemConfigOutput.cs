@@ -1,6 +1,6 @@
 ﻿using Entities.Entities;
 
-namespace Common.DTOs.SystemConfig
+namespace Common.DTOs.SystemConfigModel
 {
     public class SystemConfigOutput
     {

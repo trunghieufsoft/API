@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Entities.Entities;
-using Common.DTOs.SystemConfig;
+using Common.DTOs.SystemConfigModel;
 
 namespace Service.Services.Abstractions
 {

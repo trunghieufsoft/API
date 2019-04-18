@@ -6,7 +6,7 @@ using Common.Core.Timing;
 using Database.UnitOfWork;
 using Database.Repositories;
 using Common.Core.Exceptions;
-using Common.DTOs.SystemConfig;
+using Common.DTOs.SystemConfigModel;
 using Service.Services.Abstractions;
 
 namespace Service.Services

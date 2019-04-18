@@ -67,11 +67,11 @@ namespace WebApi.Controllers
         }
 
         [HttpPut]
-        [Route("AssigneeUser")]
-        public IActionResult AssigneeUser(string username)
+        [Route("AssignUsers")]
+        public IActionResult AssignUsesr(string username)
         {
             _sessionService.CheckSession(GetToken(), GetCurrentUser());
-            _userService.AssigneeUser(GetCurrentUser(), username);
+            _userService.AssignUsers(GetCurrentUser(), username);
             return Json(success);
         }
 
@@ -165,6 +165,15 @@ namespace WebApi.Controllers
         {
             _sessionService.CheckSession(GetToken(), GetCurrentUser());
             _userService.AllowUnselectGroups(requestDto);
+            return Json(success);
+        }
+
+        [HttpPut]
+        [Route("ChangePassword")]
+        public IActionResult ChangePassword([FromBody] ChangePasswordInput requestDto)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            _userService.ChangePassword(new DataInput<ChangePasswordInput>(requestDto, GetCurrentUser()));
             return Json(success);
         }
 

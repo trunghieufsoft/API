@@ -61,7 +61,7 @@ namespace Service.Services
 
         public Guid CreateEmployee(DataInput<EmployeeInput> requestDto) => Create(requestDto.CurrentUser, UserTypeEnum.Employee, ErrorCodeEnum.UserEmployeeExisted, ErrorCodeEnum.EmailEmployeeExisted, EnumIDGenerate.Employee, requestDto.Dto);
 
-        public void AssigneeUser(string currentUser, string username)
+        public void AssignUsers(string currentUser, string username)
         {
             try
             {
@@ -75,9 +75,10 @@ namespace Service.Services
                 user.Users = users + _comma + GenerateUsers(user.UserType, user.CountryId, user.Groups, string.IsNullOrEmpty(users) ? null : user.Users.Split(_comma));
                 _userRepository.Update(user);
             }
-            catch
+            catch (Exception e)
             {
-                throw new DefinedException(ErrorCodeEnum.CannotAssignee);
+                Log.Information(e, "Cannot User Assignment: " + e.Message);
+                throw new DefinedException(ErrorCodeEnum.CannotUserAssignment);
             }
         }
 
@@ -151,8 +152,46 @@ namespace Service.Services
             User user = _userRepository.GetById(input.Id);
             if (!AllowUnselectGroups(input.Country ?? user.CountryId, input.Groups ?? user.Groups, input.Users ?? user.Users, user))
             {
-                Log.Information("Cannot unselect the group from the list!", ErrorCodeEnum.CannotUnSelectGroup);
+                Log.Information("Cannot unselect the group from the list!");
                 throw new DefinedException(ErrorCodeEnum.CannotUnSelectGroup);
+            }
+        }
+
+        public void ChangePassword(DataInput<ChangePasswordInput> requestDto)
+        {
+            User user = GetUserContact(requestDto.CurrentUser);
+
+            if (user != null)
+            {
+                string passEncrypt = EncryptService.Encrypt(requestDto.Dto.CurrentPassword);
+                if (user.Password.Equals(passEncrypt))
+                {
+                    if (requestDto.Dto.NewPassword.CheckPassFormat())
+                    {
+                        Log.Information("Password {Password} wrong format!", requestDto.Dto.NewPassword);
+                        throw new DefinedException(ErrorCodeEnum.PasswordWrongFormat);
+                    }
+
+                    user.Password = passEncrypt;
+                    user.PasswordLastUdt = DateTime.Now;
+                    user.LastUpdatedBy = requestDto.CurrentUser;
+                    user.LastUpdateDate = DateTime.Now;
+                    try
+                    {
+                        _userRepository.Update(user);
+                        _unitOfWork.Commit();
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Information(e, "Update Error: " + e.Message);
+                        throw new SqlException("Update Error: " + e.Message, e);
+                    }
+                }
+                else
+                {
+                    Log.Information("Change Password Error: Incorrect Password!");
+                    throw new DefinedException(ErrorCodeEnum.IncorrectPassword);
+                }
             }
         }
 
@@ -254,7 +293,7 @@ namespace Service.Services
             }
         }
 
-        private IEnumerable<DropdownList> GetUsersNotAssignByGroups(UserTypeEnum userType, string countryId, string groups = null)
+        private IEnumerable<DropdownList> GetUsersHasNotBeenAssignedByGroups(UserTypeEnum userType, string countryId, string groups = null)
         {
             IEnumerable<User> TManagers = GetAllType(UserTypeEnum.Manager, countryId);
             IEnumerable<User> TStaff = GetAllType(UserTypeEnum.Staff, countryId);
@@ -286,7 +325,7 @@ namespace Service.Services
             }
         }
 
-        private IEnumerable<DropdownList> GetUsersNotAssignByGroupsRamdum(UserTypeEnum type, string countryId, string groups = null, string[] hasValue = null)
+        private IEnumerable<DropdownList> GetUsersHasNotBeenAssignedByGroupsRamdum(UserTypeEnum type, string countryId, string groups = null, string[] hasValue = null)
         {
             bool flag = true;
             Random rd = new Random();
@@ -321,22 +360,22 @@ namespace Service.Services
                 case UserTypeEnum.Employee:
                     return RamdomList;
             }
-            IEnumerable<DropdownList> UsersNotAssignByGroups = GetUsersNotAssignByGroups(type, countryId, groups);
-            int max = UsersNotAssignByGroups.Count();
+            IEnumerable<DropdownList> UsersHasNotBeenAssignedByGroups = GetUsersHasNotBeenAssignedByGroups(type, countryId, groups);
+            int max = UsersHasNotBeenAssignedByGroups.Count();
             if (max == 0)
                 return new List<DropdownList>();
-            DropdownList[] arr = UsersNotAssignByGroups.ToArray();
+            DropdownList[] arr = UsersHasNotBeenAssignedByGroups.ToArray();
 
             switch (type)
             {
                 case UserTypeEnum.Manager:
                     if (max <= randomManager)
-                        return UsersNotAssignByGroups;
+                        return UsersHasNotBeenAssignedByGroups;
                     break;
 
                 case UserTypeEnum.Staff:
                     if (max <= randomStaff)
-                        return UsersNotAssignByGroups;
+                        return UsersHasNotBeenAssignedByGroups;
                     break;
 
                 default:
@@ -453,16 +492,24 @@ namespace Service.Services
         private bool AllowUnselectGroups(string country, string groups, string users, User user)
         {
             bool returnResult = true;
-            if (!user.CountryId.Equals(country))
-                return returnResult;
             var userArr = users.SplitTrim(_comma);
             var groupsArr = groups.SplitTrim(_comma);
+            if (!user.CountryId.Equals(country) || groupsArr.Any(g => user.Groups.SplitTrim(_comma).Any(x => x.Equals(g))))
+                return returnResult;
             //check has any account used user?
             if (!user.UserType.Equals(UserTypeEnum.SuperAdmin))
             {
                 UserTypeEnum typeParent = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), Enum.GetName(typeof(UserTypeEnum), (int)user.UserType - 1), true);
-                IEnumerable<User> listUserParent = GetAllType(typeParent, country);
-                returnResult = !listUserParent.Any(u => u.Users.SplitTrim(_comma).Any(x => user.Code.Equals(x)));
+                if (!typeParent.Equals(UserTypeEnum.SuperAdmin))
+                {
+                    IEnumerable<User> listUserParent = GetAllType(typeParent, country);
+                    returnResult = !listUserParent.Any(u => u.Users.SplitTrim(_comma).Any(x => user.Code.Equals(x)));
+                    if (!returnResult)
+                    {
+                        listUserParent = listUserParent.Where(u => u.Users.SplitTrim(_comma).Any(x => u.Code.Equals(x)));
+                        returnResult = listUserParent.Any(u => u.Groups.SplitTrim(_comma).Any(g => groupsArr.Any(x => x.Equals(g))));
+                    }
+                }
             }
 
             //check user list has reference to groups
@@ -470,7 +517,8 @@ namespace Service.Services
             {
                 UserTypeEnum typeChildren = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), Enum.GetName(typeof(UserTypeEnum), (int)user.UserType + 1), true);
                 IEnumerable<User> listUserChildren = GetAllType(typeChildren, country);
-                returnResult = listUserChildren.Where(u => userArr.Any(x => u.Code.Equals(x))).Any(u => groupsArr.Any(x => u.Groups.Equals(x)));
+                listUserChildren = listUserChildren.Where(u => userArr.Any(x => u.Code.Equals(x)));
+                returnResult = groupsArr.Any(arr => listUserChildren.Any(u => u.Groups.SplitTrim(_comma).Equals(arr)));
             }
             return returnResult;
         }
@@ -483,9 +531,9 @@ namespace Service.Services
             User user = _userRepository.GetById((Guid)dataInput.Id);
             if (user != null)
             {
-                if (ExisedEmail((string)dataInput.Email))
+                if (ExisedEmail(email: (string)dataInput.AddressInfo.Email, idUpdate: (Guid)dataInput.Id))
                 {
-                    Log.Information("Email {Email} existed!", (string)dataInput.Email);
+                    Log.Information("Email {Email} existed!", (string)dataInput.AddressInfo.Email);
                     throw new DefinedException(exitedEmail);
                 }
                 #region handle variable
@@ -498,7 +546,6 @@ namespace Service.Services
                     Log.Information("Cannot unselect the group from the list!", ErrorCodeEnum.CannotUnSelectGroup);
                     throw new DefinedException(ErrorCodeEnum.CannotUnSelectGroup);
                 }
-
                 #endregion
 
                 #region update user
@@ -506,7 +553,7 @@ namespace Service.Services
                 user.CountryId = (string)dataInput.CountryId;
                 user.FullName = (string)dataInput.FullName;
                 user.Groups = dataInput is ManagerUpdateInput ? (string)dataInput.Groups : (string)dataInput.Group;
-                user.Users = dataInput is EmployeeUpdateInput ? null : user.CountryId.Equals((string)dataInput.CountryId) ? (string)dataInput.Users : string.Empty;
+                user.Users = dataInput is EmployeeUpdateInput ? null : !user.CountryId.Equals((string)dataInput.CountryId) ? (string)dataInput.Users : string.Empty;
                 user.Address = (string)dataInput.AddressInfo.Address;
                 user.Phone = (string)dataInput.AddressInfo.PhoneNo;
                 user.Email = (string)dataInput.AddressInfo.Email;
@@ -643,9 +690,9 @@ namespace Service.Services
         private bool ExistedUser(string username)
             => _userRepository.GetAll().Any(x => x.Username.Equals(username));
 
-        private bool ExisedEmail(string email, bool allowBlank = false)
+        private bool ExisedEmail(string email, bool allowBlank = false, Guid? idUpdate = null)
             => !(allowBlank && string.IsNullOrEmpty(email))
-                ? _userRepository.GetAll().Any(x => x.Email.Equals(email))
+                ? _userRepository.GetAll().WhereIf(idUpdate != null, x => !idUpdate.Equals(x.Id)).Any(x => x.Email.Equals(email))
                 : false;
 
         private bool CheckAuthority(string username, UserTypeEnum type)
@@ -680,7 +727,7 @@ namespace Service.Services
             => _userRepository.GetMany(x => x.UserType.Equals(type)).WhereIf(country != null, x => x.CountryId.Equals(country));
 
         private string GenerateUsers(UserTypeEnum type, string countryId, string groups, string[] hasValue = null)
-            => string.Join(_comma, GetUsersNotAssignByGroupsRamdum(type, countryId, groups, hasValue).Select(x => x.Code));
+            => string.Join(_comma, GetUsersHasNotBeenAssignedByGroupsRamdum(type, countryId, groups, hasValue).Select(x => x.Code));
         #endregion
     }
 }
