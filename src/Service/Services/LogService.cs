@@ -36,7 +36,7 @@ namespace Service.Services
             _configService = configService;
             _userRepository = userRepository;
 
-            var logDB = _configuration.GetConnectionString("DefaultConnection");
+            var logDB = _configuration.GetConnectionString("LogConnection");
             var logTable = "TBL_LOG_WORK";
             var options = new ColumnOptions();
             options.Store.Add(StandardColumn.LogEvent);
@@ -47,7 +47,7 @@ namespace Service.Services
             options.TimeStamp.NonClusteredIndex = true;
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
-                .WriteTo.RollingFile("Log-{Date}.txt", retainedFileCountLimit: 2)
+                //.WriteTo.RollingFile("Log-{Date}.txt", retainedFileCountLimit: 2)
                 .WriteTo.MSSqlServer(connectionString: logDB, tableName: logTable, columnOptions: options, restrictedToMinimumLevel: LogEventLevel.Information)
                 .CreateLogger();
         }

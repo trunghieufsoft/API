@@ -91,7 +91,7 @@ namespace Service.Services
             }
             string value = Enum.GetName(typeof(UserTypeEnum), (int)user.UserType - 1);
             UserTypeEnum typeParent = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), value, true);
-            if (allowDeleteUser(typeParent, user))
+            if (AllowDeleteUser(typeParent, user))
             {
                 _unitOfWork.Delete(user);
                 _unitOfWork.Commit();
@@ -130,8 +130,8 @@ namespace Service.Services
 
         public string GetSubcriseToken(Guid userid)
         {
-            var user = _userRepository.GetById(userid);
-            return user != null ? user.SubcriseToken : null;
+            User user = _userRepository.GetById(userid);
+            return user?.SubcriseToken;
         }
 
         public SearchOutput SearchManager(DataInput<SearchInput> requestDto)
@@ -450,7 +450,7 @@ namespace Service.Services
             List<Expression<Func<UserOutput, bool>>> listExpresion = GetExpressions<UserOutput>(requestDto.Dto, fieldNumber);
 
             var user = GetUserContact(requestDto.CurrentUser);
-            IQueryable<UserOutput> queryResult = GetAllType(user.UserType.Equals(UserTypeEnum.SuperAdmin) ? searchUserType : user.UserType, user.CountryId != null ? user.CountryId : null)
+            IQueryable<UserOutput> queryResult = GetAllType(user.UserType.Equals(UserTypeEnum.SuperAdmin) ? searchUserType : user.UserType, user.CountryId ?? null)
                 .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
 
             if (queryResult == null)
@@ -485,14 +485,14 @@ namespace Service.Services
             switch (searchUserType)
             {
                 case UserTypeEnum.Manager:
-                    var staffUsers = GetAllType(UserTypeEnum.Staff, user.CountryId != null ? user.CountryId : null)
+                    var staffUsers = GetAllType(UserTypeEnum.Staff, user.CountryId ?? null)
                         .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
                     return staffUsers.Where(staff => user.Users.SplitTrim(_comma).Any(x => x.Equals(staff.Code)));
 
                 case UserTypeEnum.Staff:
                     if (user.UserType.Equals(UserTypeEnum.Manager))
                         return SearchAuthority(queryResult, user, user.UserType);
-                    IEnumerable<UserOutput> employeeUsers = GetAllType(UserTypeEnum.Employee, user.CountryId != null ? user.CountryId : null)
+                    IEnumerable<UserOutput> employeeUsers = GetAllType(UserTypeEnum.Employee, user.CountryId ?? null)
                         .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
                     IEnumerable<UserOutput> filterStaff = queryResult.Where(staff => !string.IsNullOrEmpty(staff.Users)).ToList();
                     if (filterStaff.Count() == 0)
@@ -507,7 +507,7 @@ namespace Service.Services
                         user.UserType = UserTypeEnum.Staff;
                         return SearchAuthority(queryResult, user, user.UserType);
                     }
-                    IQueryable<UserOutput> employeeUser = GetAllType(UserTypeEnum.Employee, user.CountryId != null ? user.CountryId : null).Select(row => new UserOutput(row, null));
+                    IQueryable<UserOutput> employeeUser = GetAllType(UserTypeEnum.Employee, user.CountryId ?? null).Select(row => new UserOutput(row, null));
                     return employeeUser.Where(employee => user.Users.SplitTrim(_comma).Any(x => x.Equals(employee.Code)));
 
                 default:
@@ -518,7 +518,7 @@ namespace Service.Services
 
         private IQueryable<UserOutput> GetUserListByUser(User user)
         {
-            IQueryable<UserOutput> users = GetAllType(user.UserType, user.CountryId != null ? user.CountryId : null)
+            IQueryable<UserOutput> users = GetAllType(user.UserType, user.CountryId ?? null)
                 .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
 
             switch (user.UserType)
@@ -569,7 +569,7 @@ namespace Service.Services
             }
         }
 
-        private bool allowDeleteUser(UserTypeEnum type, User user)
+        private bool AllowDeleteUser(UserTypeEnum type, User user)
             => !(string.IsNullOrEmpty(user.Users) ||
             GetAllType(type, user.CountryId).Where(u => !string.IsNullOrEmpty(u.Users)).Any(u => u.Users.SplitTrim(_comma).Any(x => x.Equals(user.Code))));
 
