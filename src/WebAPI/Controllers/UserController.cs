@@ -10,7 +10,6 @@ using Common.Core.Timing;
 using Common.DTOs.Common;
 using Common.DTOs.UserModel;
 using Service.Services.Abstractions;
-using Entities.Enumerations;
 
 namespace WebApi.Controllers
 {
@@ -202,6 +201,24 @@ namespace WebApi.Controllers
         public IActionResult GetSubcriseToken()
         {
             return Json(_userService.GetSubcriseToken(GetUserIdFromHeader().Value));
+        }
+
+        [HttpPost]
+        [Route("EndOfDay")]
+        public IActionResult EndOfDay()
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            _userService.EndOfDay(GetCurrentUser());
+
+            return Json(true);
+        }
+
+        [HttpGet]
+        [Route("KeepAlive")]
+        public IActionResult KeepAlive()
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            return Json(true);
         }
 
         private string GenerateJSONWebToken(UserOutput userInfo)

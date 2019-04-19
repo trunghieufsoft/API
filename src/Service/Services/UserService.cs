@@ -16,6 +16,7 @@ using Common.Core.Linq.Extensions;
 using Service.Services.Abstractions;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Microsoft.Extensions.Configuration;
 
 namespace Service.Services
 {
@@ -25,8 +26,9 @@ namespace Service.Services
         private readonly ILogService _logService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailService _emailService;
-        private readonly ISystemConfigService _configService;
+        private readonly IConfiguration _configuration;
         private readonly IRepository<User> _userRepository;
+        private readonly ISystemConfigService _configService;
         private readonly IRepository<Group> _groupRepository;
         #endregion
 
@@ -34,14 +36,16 @@ namespace Service.Services
         public UserService(ILogService logService,
             IUnitOfWork unitOfWork,
             IEmailService emailService,
+            IConfiguration configuration,
             IRepository<User> userRepository,
             IRepository<Group> groupRepository,
             ISystemConfigService configService)
         {
             _logService = logService;
             _unitOfWork = unitOfWork;
-            _emailService = emailService;
+             _emailService = emailService;
             _configService = configService;
+            _configuration = configuration;
             _userRepository = userRepository;
             _groupRepository = groupRepository;
         }
@@ -138,6 +142,25 @@ namespace Service.Services
             return user?.SubcriseToken;
         }
 
+        public void EndOfDay(string currentUser)
+        {
+            var employee = GetUserContact(currentUser);
+            if (employee.UserType.Equals(UserTypeEnum.Employee))
+            {
+                if (employee != null)
+                {
+                    employee.Status = employee.Status.Equals(StatusEnum.Active) ? StatusEnum.EndOfDay : employee.Status;
+                    employee.LastUpdateDate = Clock.Now;
+                }
+                _unitOfWork.Update(employee);
+                _unitOfWork.Commit();
+            }
+            else
+            {
+                throw new BadData();
+            }
+        }
+
         public SearchOutput SearchManager(DataInput<SearchInput> requestDto)
             => Search(requestDto, UserTypeEnum.Manager, 5);
 
@@ -192,6 +215,22 @@ namespace Service.Services
                     Log.Information("Change Password Error: Incorrect Password!");
                     throw new DefinedException(ErrorCodeEnum.IncorrectPassword);
                 }
+            }
+        }
+
+        public void ResetEndOfDate()
+        {
+            var userQuery = _userRepository.GetAll().Where(x => x.Status.Equals(StatusEnum.EndOfDay) == true && x.LastUpdateDate.HasValue && x.LastUpdateDate.Value.Date != Clock.Now.Date);
+            if (userQuery != null && userQuery.Count() > 0)
+            {
+                foreach (var user in userQuery)
+                {
+                    user.Status = user.Status.Equals(StatusEnum.EndOfDay) ? StatusEnum.Available : user.Status;
+                    user.LastUpdateDate = Clock.Now;
+                    user.LastUpdatedBy = _configuration["Auto:Update"];
+                    _unitOfWork.Update(user);
+                }
+                _unitOfWork.Commit();
             }
         }
 

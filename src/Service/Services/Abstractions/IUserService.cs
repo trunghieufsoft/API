@@ -26,6 +26,8 @@ namespace Service.Services.Abstractions
 
         CountTotalUsers CountTotalUsers(string currentUser);
 
+        void EndOfDay(string currentUser);
+
         string GetSubcriseToken(Guid userid);
 
         SearchOutput SearchManager(DataInput<SearchInput> requestDto);

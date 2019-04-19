@@ -6,7 +6,7 @@
         Inactive = 1,
         Available = 2,
         Unavailable = 3,
-
-        EndOfDate = 4,
+        
+        EndOfDay = 4,
     }
 }
