@@ -668,10 +668,10 @@ namespace Service.Services
             switch (user.UserType)
             {
                 case UserTypeEnum.Manager:
-                    IQueryable<UserOutput> Staff = SearchAuthority(users, user, UserTypeEnum.Staff);
-                    IQueryable<UserOutput> Employee = SearchAuthority(users, user, UserTypeEnum.Employee);
+                    IEnumerable<UserOutput> Staff = SearchAuthority(users, user, UserTypeEnum.Staff);
+                    IEnumerable<UserOutput> Employee = SearchAuthority(users, user, UserTypeEnum.Employee);
                     var result = Staff.Union(Employee);
-                    return result;
+                    return result.AsQueryable();
 
                 case UserTypeEnum.Staff:
                     return SearchAuthority(users, user, UserTypeEnum.Employee);
