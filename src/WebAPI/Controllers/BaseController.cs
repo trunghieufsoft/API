@@ -8,7 +8,7 @@ namespace WebApi.Controllers
 {
     public class BaseController : Controller
     {
-        protected readonly string success = "Success";
+        protected readonly bool success = true;
         public override JsonResult Json(object data)
         {
             return new JsonResult(new ResponseModel

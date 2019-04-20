@@ -176,6 +176,15 @@ namespace WebApi.Controllers
             return Json(success);
         }
 
+        [HttpPost]
+        [Route("ForgotPassword")]
+        public IActionResult ForgotPassword([FromBody] ResetPasswordInput requestDto)
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            _userService.ForgotPassword(new DataInput<ResetPasswordInput>(requestDto, GetCurrentUser()));
+            return Json(success);
+        }
+
         [HttpGet]
         [Route("TotalUsers")]
         public IActionResult TotalUsers()
@@ -210,7 +219,16 @@ namespace WebApi.Controllers
             _sessionService.CheckSession(GetToken(), GetCurrentUser());
             _userService.EndOfDay(GetCurrentUser());
 
-            return Json(true);
+            return Json(success);
+        }
+
+        [HttpGet]
+        [Route("Logout")]
+        public IActionResult Logout()
+        {
+            _sessionService.CheckSession(GetToken(), GetCurrentUser());
+            _userService.Logout(GetCurrentUser());
+            return Json(success);
         }
 
         [HttpGet]
@@ -218,7 +236,7 @@ namespace WebApi.Controllers
         public IActionResult KeepAlive()
         {
             _sessionService.CheckSession(GetToken(), GetCurrentUser());
-            return Json(true);
+            return Json(success);
         }
 
         private string GenerateJSONWebToken(UserOutput userInfo)
@@ -245,7 +263,7 @@ namespace WebApi.Controllers
 
             JwtSecurityToken token = new JwtSecurityToken(_config["Jwt:Issuer"], _config["Jwt:Issuer"], claims, signingCredentials: credentials);
             string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-            _userService.UpdateToken(userInfo.Id, tokenGuid);
+            _userService.UpdateToken(userInfo.Id, tokenString, tokenGuid);
 
             return tokenString;
         }

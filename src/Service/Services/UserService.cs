@@ -43,7 +43,7 @@ namespace Service.Services
         {
             _logService = logService;
             _unitOfWork = unitOfWork;
-             _emailService = emailService;
+            _emailService = emailService;
             _configService = configService;
             _configuration = configuration;
             _userRepository = userRepository;
@@ -161,6 +161,19 @@ namespace Service.Services
             }
         }
 
+        public void Logout(string currentUser)
+        {
+            User user = GetUserContact(currentUser);
+
+            if (user != null)
+            {
+                user.Token = string.Empty;
+                user.SubcriseToken = string.Empty;
+            }
+            _unitOfWork.Update(user);
+            _unitOfWork.Commit();
+        }
+
         public SearchOutput SearchManager(DataInput<SearchInput> requestDto)
             => Search(requestDto, UserTypeEnum.Manager, 5);
 
@@ -234,19 +247,46 @@ namespace Service.Services
             }
         }
 
-        public void UpdateToken(Guid userid, string token)
+        public void UpdateToken(Guid userid, string subcriseToken, string token)
         {
             User user = _userRepository.GetById(userid);
 
             if (user != null)
             {
                 user.Token = token;
+                user.SubcriseToken = subcriseToken;
                 if (string.IsNullOrEmpty(token))
                     user.LoginTime = null;
                 else
                     user.LoginTime = DateTime.Now;
                 _userRepository.Update(user);
                 _unitOfWork.Commit();
+            }
+        }
+
+        public void ForgotPassword(DataInput<ResetPasswordInput> requestDto)
+        {
+            User user = GetUserContact(requestDto.CurrentUser);
+            if (user != null)
+            {
+                if (requestDto.Dto.Email.Trim().Equals(user.Email.Trim()))
+                {
+                    user.Password = GeneratePassword();
+                    _unitOfWork.Update(user);
+                    _unitOfWork.Commit();
+                    //_emailService.SendForgotPassword(user.Email, user.Password, user.FullName);
+                    Log.Information("Reset Password For User: {Username} Successfully.", user.Username);
+                }
+                else
+                {
+                    Log.Information("Email is incorrect!", ErrorCodeEnum.IncorrectEmail);
+                    throw new DefinedException(ErrorCodeEnum.IncorrectEmail);
+                }
+            }
+            else
+            {
+                Log.Information("User is incorrect!", ErrorCodeEnum.IncorrectUser);
+                throw new DefinedException(ErrorCodeEnum.IncorrectUser);
             }
         }
         #endregion
