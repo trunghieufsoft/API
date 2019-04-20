@@ -2,9 +2,11 @@
 using Common.DTOs.Common;
 using Common.Core.Enumerations;
 using Service.Services.Abstractions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebApi.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class AuditLogController : BaseController
