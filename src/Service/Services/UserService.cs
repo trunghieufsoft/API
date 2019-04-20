@@ -189,7 +189,7 @@ namespace Service.Services
                 string passEncrypt = EncryptService.Encrypt(requestDto.Dto.CurrentPassword);
                 if (user.Password.Equals(passEncrypt))
                 {
-                    if (requestDto.Dto.NewPassword.CheckPassFormat())
+                    if (!requestDto.Dto.NewPassword.CheckPassFormat())
                     {
                         Log.Information("Password {Password} wrong format!", requestDto.Dto.NewPassword);
                         throw new DefinedException(ErrorCodeEnum.PasswordWrongFormat);
