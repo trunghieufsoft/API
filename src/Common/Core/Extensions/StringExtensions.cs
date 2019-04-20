@@ -627,6 +627,7 @@ namespace Common.Core.Extensions
             {
                 return string.Empty;
             }
+            stringValue = stringValue.Trim();
             return char.ToUpper(stringValue[0]) + stringValue.Substring(1);
         }
 

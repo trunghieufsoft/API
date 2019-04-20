@@ -7,5 +7,6 @@
         Manager = 1,
         Staff = 2,
         Employee = 3,
+        Unknow = 4,
     }
 }
