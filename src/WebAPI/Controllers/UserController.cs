@@ -227,7 +227,7 @@ namespace WebApi.Controllers
         public IActionResult Logout()
         {
             _sessionService.CheckSession(GetToken(), GetCurrentUser());
-            _userService.Logout(GetCurrentUser());
+            _userService.Logout(GetCurrentUser(), GetToken());
             return Json(success);
         }
 

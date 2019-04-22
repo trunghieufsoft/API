@@ -161,14 +161,15 @@ namespace Service.Services
             }
         }
 
-        public void Logout(string currentUser)
+        public void Logout(string currentUser, string token)
         {
             User user = GetUserContact(currentUser);
 
             if (user != null)
             {
-                user.Token = string.Empty;
-                user.SubcriseToken = string.Empty;
+                user.Token = null;
+                user.LoginTime = null;
+                user.SubcriseToken = null;
             }
             _unitOfWork.Update(user);
             _unitOfWork.Commit();
@@ -271,11 +272,29 @@ namespace Service.Services
             {
                 if (requestDto.Dto.Email.Trim().Equals(user.Email.Trim()))
                 {
-                    user.Password = GeneratePassword();
-                    _unitOfWork.Update(user);
-                    _unitOfWork.Commit();
-                    //_emailService.SendForgotPassword(user.Email, user.Password, user.FullName);
-                    Log.Information("Reset Password For User: {Username} Successfully.", user.Username);
+                    var diffInSeconds = Math.Round(user.PasswordLastUdt.HasValue ? (Clock.Now - user.PasswordLastUdt.Value).TotalSeconds : 300);
+                    if (diffInSeconds >= 300)
+                    {
+                        user.PasswordLastUdt = Clock.Now;
+                        user.LastUpdateDate = Clock.Now;
+                        user.Password = GeneratePassword();
+                        try
+                        {
+                            _emailService.SendForgotPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, user.UserType.Equals(UserTypeEnum.Employee));
+                            Log.Information("Reset Password For User: {Username} Successfully.", user.Username);
+                            _unitOfWork.Update(user);
+                            _unitOfWork.Commit();
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Error(user.FullName + "reset password error {e}", e);
+                            throw new DefinedException(ErrorCodeEnum.CannotSendEmailToResetPassword);
+                        }
+                    }
+                    else
+                    {
+                        throw new DefinedException(ErrorCodeEnum.MultiplePasswordResetting, 300 - diffInSeconds);
+                    }
                 }
                 else
                 {

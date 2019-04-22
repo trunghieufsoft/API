@@ -28,7 +28,7 @@ namespace Service.Services.Abstractions
 
         void EndOfDay(string currentUser);
 
-        void Logout(string currentUser);
+        void Logout(string currentUser, string token);
 
         string GetSubcriseToken(Guid userid);
 
