@@ -31,5 +31,6 @@
         ManagerIsCurrentlyInactive = 27,
         StaffIsCurrentlyInactive = 28,
         CannotUnSelectGroup = 29,
+        IncorrectEmail = 30
     }
 }

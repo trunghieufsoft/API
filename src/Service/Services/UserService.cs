@@ -43,7 +43,7 @@ namespace Service.Services
         {
             _logService = logService;
             _unitOfWork = unitOfWork;
-             _emailService = emailService;
+            _emailService = emailService;
             _configService = configService;
             _configuration = configuration;
             _userRepository = userRepository;
@@ -161,6 +161,20 @@ namespace Service.Services
             }
         }
 
+        public void Logout(string currentUser, string token)
+        {
+            User user = GetUserContact(currentUser);
+
+            if (user != null)
+            {
+                user.Token = null;
+                user.LoginTime = null;
+                user.SubcriseToken = null;
+            }
+            _unitOfWork.Update(user);
+            _unitOfWork.Commit();
+        }
+
         public SearchOutput SearchManager(DataInput<SearchInput> requestDto)
             => Search(requestDto, UserTypeEnum.Manager, 5);
 
@@ -234,19 +248,64 @@ namespace Service.Services
             }
         }
 
-        public void UpdateToken(Guid userid, string token)
+        public void UpdateToken(Guid userid, string subcriseToken, string token)
         {
             User user = _userRepository.GetById(userid);
 
             if (user != null)
             {
                 user.Token = token;
+                user.SubcriseToken = subcriseToken;
                 if (string.IsNullOrEmpty(token))
                     user.LoginTime = null;
                 else
                     user.LoginTime = DateTime.Now;
                 _userRepository.Update(user);
                 _unitOfWork.Commit();
+            }
+        }
+
+        public void ForgotPassword(DataInput<ResetPasswordInput> requestDto)
+        {
+            User user = GetUserContact(requestDto.CurrentUser);
+            if (user != null)
+            {
+                if (requestDto.Dto.Email.Trim().Equals(user.Email.Trim()))
+                {
+                    var diffInSeconds = Math.Round(user.PasswordLastUdt.HasValue ? (Clock.Now - user.PasswordLastUdt.Value).TotalSeconds : 300);
+                    if (diffInSeconds >= 300)
+                    {
+                        user.PasswordLastUdt = Clock.Now;
+                        user.LastUpdateDate = Clock.Now;
+                        user.Password = GeneratePassword();
+                        try
+                        {
+                            _emailService.SendForgotPassword(user.Email, EncryptService.Decrypt(user.Password), user.FullName, user.UserType.Equals(UserTypeEnum.Employee));
+                            Log.Information("Reset Password For User: {Username} Successfully.", user.Username);
+                            _unitOfWork.Update(user);
+                            _unitOfWork.Commit();
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Error(user.FullName + "reset password error {e}", e);
+                            throw new DefinedException(ErrorCodeEnum.CannotSendEmailToResetPassword);
+                        }
+                    }
+                    else
+                    {
+                        throw new DefinedException(ErrorCodeEnum.MultiplePasswordResetting, 300 - diffInSeconds);
+                    }
+                }
+                else
+                {
+                    Log.Information("Email is incorrect!", ErrorCodeEnum.IncorrectEmail);
+                    throw new DefinedException(ErrorCodeEnum.IncorrectEmail);
+                }
+            }
+            else
+            {
+                Log.Information("User is incorrect!", ErrorCodeEnum.IncorrectUser);
+                throw new DefinedException(ErrorCodeEnum.IncorrectUser);
             }
         }
         #endregion

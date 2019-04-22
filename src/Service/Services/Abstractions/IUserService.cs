@@ -20,13 +20,15 @@ namespace Service.Services.Abstractions
 
         UserOutput WebLogin(LoginInput requestDto);
 
-        void UpdateToken(Guid userid, string token);
+        void UpdateToken(Guid userid, string subcriseToken, string token);
 
         UserOutput View(Guid id);
 
         CountTotalUsers CountTotalUsers(string currentUser);
 
         void EndOfDay(string currentUser);
+
+        void Logout(string currentUser, string token);
 
         string GetSubcriseToken(Guid userid);
 
@@ -39,5 +41,7 @@ namespace Service.Services.Abstractions
         void AllowUnselectGroups(UnselectGroupsInput requestDto);
 
         void ChangePassword(DataInput<ChangePasswordInput> requestDto);
+
+        void ForgotPassword(DataInput<ResetPasswordInput> requestDto);
     }
 }

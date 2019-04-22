@@ -10,6 +10,8 @@ namespace Service.Services
         private readonly IConfiguration _config;
         private string resetTitle = "Password Reset";
         private string resetTemplate = "Dear {fullName} <br><br><br>Your password has been successfully reset. <br> The new password is: {password} <br>Please change your password after the first log in.<br><br><br>Sincerely,<br>Administrator<br><i>Note: This is an auto-generated email, please do not reply.</i>";
+        private string resetEmployeeTitle = "{company}: Your password has been reset";
+        private string resetEmployeeTemplate = "Dear {fullName} <br><br><br>Your password has been successfully reset.  <br> The new password is: {password}<br><br><br>Sincerely,<br>{company}<br><i>Note: This is an auto-generated email, please do not reply.</i>";
         private string newTitle = "Your account has been successfully created";
         private string newTemplate = "Dear {fullName} <br><br><br>Your account has been successfully created. Please use detailed information below to log in.<br>Your username is: {username} <br> Your password is: {password} <br><br><br>Sincerely,<br> {company} <br><i>Note: This is an auto-generated email, please do not reply.</i>";
         
@@ -18,9 +20,17 @@ namespace Service.Services
             _config = config;
         }
 
-        public void SendForgotPassword(string email, string password, string fullname)
+        public void SendForgotPassword(string email, string password, string fullname, bool isEmployee, string company = "FPT Company")
         {
-            SendMail(resetTitle, resetTemplate.Replace("{password}", password).Replace("{fullName}", fullname), email, null);
+            Log.Information("Send Mail reset password to email " + email);
+            if (isEmployee)
+            {
+                SendMail(resetEmployeeTitle, resetEmployeeTemplate.Replace("{password}", password).Replace("{fullName}", fullname), email, null);
+            }
+            else
+            {
+                SendMail(resetTitle, resetTemplate.Replace("{password}", password).Replace("{fullName}", fullname), email, null);
+            }
         }
 
         public void SendNewPassword(string email, string password, string fullname, string username, string company = "FPT Company")
