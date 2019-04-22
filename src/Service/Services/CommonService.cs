@@ -53,7 +53,7 @@ namespace Service.Services
             IEnumerable<UserAssignmentInfo> users = new List<UserAssignmentInfo>();
             if (user != null)
             {
-                country = _countryRepository.GetAll().WhereIf(!user.CountryId.Equals(_all), x => x.CountryId.Equals(user.CountryId)).Select(row => new DropdownList(row.CountryId, row.CountryName));
+                country = _countryRepository.GetAll().WhereIf(!string.IsNullOrEmpty(user.CountryId), x => x.CountryId.Equals(user.CountryId)).Select(row => new DropdownList(row.CountryId, row.CountryName));
                 groups = _groupRepository.GetAll().AsEnumerable().WhereIf(!user.Groups.Equals(_all), item => user.Groups.SplitTrim(_comma).Any(g => g.Equals(item.GroupCode)))
                     .Select(row => new DropdownList(row.GroupCode, row.GroupName));
                 users = GetUsersAllTypeAssignByCountry(user.UserType, user.CountryId);
