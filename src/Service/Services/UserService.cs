@@ -826,7 +826,7 @@ namespace Service.Services
             => _userRepository.GetMany(x => x.UserType.Equals(type)).WhereIf(country != null, x => x.CountryId.Equals(country));
 
         private string GenerateUsers(UserTypeEnum type, string countryId, string groups, string[] hasValue = null)
-            => string.Join(_comma, GetUsersHasNotBeenAssignedByGroupsRamdum(type, countryId, groups, hasValue).Select(x => x.Code));
+            => string.Join(_comma, GetUsersHasNotBeenAssignedByGroupsRamdum(type, countryId, groups, hasValue).Select(x => x.Id));
         #endregion
     }
 }

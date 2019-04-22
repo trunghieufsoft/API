@@ -45,6 +45,27 @@ namespace Service.Services
         public IEnumerable<DropdownList> GetAllGroup()
             => _groupRepository.GetAll().Select(x => new DropdownList(x.GroupCode, x.GroupName));
 
+        public DetailCountryInfo GetDetailCountry(string username)
+        {
+            User user = _userRepository.Get(x => x.Username.Equals(username));
+            IEnumerable<DropdownList> country = new List<DropdownList>();
+            IEnumerable<DropdownList> groups = new List<DropdownList>();
+            IEnumerable<UserAssignmentInfo> users = new List<UserAssignmentInfo>();
+            if (user != null)
+            {
+                country = _countryRepository.GetAll().WhereIf(!user.CountryId.Equals(_all), x => x.CountryId.Equals(user.CountryId)).Select(row => new DropdownList(row.CountryId, row.CountryName));
+                groups = _groupRepository.GetAll().AsEnumerable().WhereIf(!user.Groups.Equals(_all), item => user.Groups.SplitTrim(_comma).Any(g => g.Equals(item.GroupCode)))
+                    .Select(row => new DropdownList(row.GroupCode, row.GroupName));
+                users = GetUsersAllTypeAssignByCountry(user.UserType, user.CountryId);
+            }
+            return new DetailCountryInfo()
+            {
+                Countries = country,
+                Users = users,
+                Groups = groups
+            };
+        }
+
         public IEnumerable<UserAssignmentInfo> GetUsersAllTypeAssignByCountry(UserTypeEnum userType, string country = null)
         {
             IList<UserAssignmentInfo> result = new List<UserAssignmentInfo>();
