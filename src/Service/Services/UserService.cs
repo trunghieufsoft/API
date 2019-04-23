@@ -182,7 +182,7 @@ namespace Service.Services
             => Search(requestDto, UserTypeEnum.Staff, 7);
 
         public SearchOutput SearchEmployee(DataInput<SearchInput> requestDto)
-            => Search(requestDto, UserTypeEnum.Employee, 5);
+            => Search(requestDto, UserTypeEnum.Employee, 7);
 
         public void AllowUnselectGroups(UnselectGroupsInput input)
         {
