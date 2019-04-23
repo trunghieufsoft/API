@@ -176,7 +176,7 @@ namespace Service.Services
         }
 
         public SearchOutput SearchManager(DataInput<SearchInput> requestDto)
-            => Search(requestDto, UserTypeEnum.Manager, 5);
+            => Search(requestDto, UserTypeEnum.Manager, 6);
 
         public SearchOutput SearchStaff(DataInput<SearchInput> requestDto)
             => Search(requestDto, UserTypeEnum.Staff, 7);

@@ -255,6 +255,7 @@ namespace WebApi.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub,  userInfo.Username),
                 new Claim("Username", userInfo.Username),
                 new Claim("Fullname", fullName),
+                new Claim("Country", userInfo.CountryId),
                 new Claim("UserType", userInfo.UserType),
                 new Claim("ExpiredPassword", userInfo.ExpiredPassword),
                 new Claim("UserId", userInfo.Id.ToString()),
