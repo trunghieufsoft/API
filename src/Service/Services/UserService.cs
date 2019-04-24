@@ -813,8 +813,8 @@ namespace Service.Services
         }
 
         private bool AllowDeleteUser(UserTypeEnum type, User user)
-            => !(string.IsNullOrEmpty(user.Users) ||
-            GetAllType(type, user.CountryId).Where(u => !string.IsNullOrEmpty(u.Users)).Any(u => u.Users.SplitTrim(_comma).Any(x => x.Equals(user.Code))));
+            => (string.IsNullOrEmpty(user.Users) ||
+            !GetAllType(type, user.CountryId).Where(u => !string.IsNullOrEmpty(u.Users)).Any(u => u.Users.SplitTrim(_comma).Any(x => x.Equals(user.Code))));
 
         private User GetUserContact(string username)
             => _userRepository.Get(x => x.Username.Equals(username));
