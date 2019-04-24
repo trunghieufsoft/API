@@ -90,10 +90,10 @@ namespace Service.Services
                 var Users = GetUsersAssignByUser(user, user.UserType.Equals(UserTypeEnum.SuperAdmin));
                 return new UserAssignmentInfo()
                 {
+                    Code = user.Code,
                     Username = user.Username,
                     FullName = user.FullName,
-                    Users = Users,
-                    TotalUser = Users.ToList().Count()
+                    Users = Users
                 };
             }
             else
@@ -104,15 +104,25 @@ namespace Service.Services
         #endregion
 
         #region Method
-        private IEnumerable<DropdownList> GetUsersAssignByUser(User user, bool isSuper = false)
+        private IEnumerable<UserAssignmentInfo> GetUsersAssignByUser(User user, bool isSuper = false)
         {
             if (user.UserType.Equals(UserTypeEnum.Employee))
-                return new List<DropdownList>();
+                return new List<UserAssignmentInfo>();
             UserTypeEnum type = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), Enum.GetName(typeof(UserTypeEnum), (int)user.UserType + 1), true);
             IEnumerable<User> users = _userRepository.GetMany(x => x.UserType.Equals(type)).WhereIf(user.CountryId != null, x => x.CountryId.Equals(user.CountryId));
-            return isSuper
-                ? users.Select(row => new DropdownList(row.Code, row.Username, row.FullName))
-                : users.Where(u => user.Users.Split(_comma).Any(x => x.Equals(u.Code))).Select(row => new DropdownList(row.Code, row.Username, row.FullName));
+            if (!isSuper)
+            {
+                if (string.IsNullOrEmpty(user.Users))
+                    return new List<UserAssignmentInfo>();
+                users = users.Where(u => user.Users.SplitTrim(_comma).Any(x => x == u.Code));
+            }
+            return users.Select(row => new UserAssignmentInfo()
+            {
+                Code = row.Code,
+                Username = row.Username,
+                FullName = row.FullName,
+                Users = GetUsersAssignByUser(row, row.UserType.Equals(UserTypeEnum.SuperAdmin))
+            });
         }
         #endregion
     }

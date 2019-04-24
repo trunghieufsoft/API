@@ -76,7 +76,7 @@ namespace Service.Services
                     throw new DefinedException(ErrorCodeEnum.NotAuthorized);
                 }
                 var users = string.IsNullOrWhiteSpace(user.Users) ? string.Empty : user.Users;
-                user.Users = users + _comma + GenerateUsers(user.UserType, user.CountryId, user.Groups, string.IsNullOrEmpty(users) ? null : user.Users.Split(_comma));
+                user.Users = users + (string.IsNullOrEmpty(users) ? string.Empty : _comma) + GenerateUsers(user.UserType, user.CountryId, user.Groups, string.IsNullOrEmpty(users) ? null : user.Users.Split(_comma));
                 _userRepository.Update(user);
             }
             catch (Exception e)
@@ -590,9 +590,8 @@ namespace Service.Services
         private bool AllowUnselectGroups(string country, string groups, string users, User user)
         {
             bool returnResult = true;
-            var userArr = users.SplitTrim(_comma);
-            var groupsArr = groups.SplitTrim(_comma);
-            if (!user.CountryId.Equals(country) || groupsArr.Any(g => user.Groups.SplitTrim(_comma).Any(x => x.Equals(g))))
+            var groupsArr = string.IsNullOrEmpty(groups) ? new string[0] : groups.SplitTrim(_comma);
+            if (!user.CountryId.Equals(country) || (groupsArr.Length > 0 && groupsArr.Any(g => user.Groups.SplitTrim(_comma).Any(x => x.Equals(g)))))
                 return returnResult;
             //check has any account used user?
             if (!user.UserType.Equals(UserTypeEnum.SuperAdmin))
@@ -611,7 +610,8 @@ namespace Service.Services
             }
 
             //check user list has reference to groups
-            if (!user.UserType.Equals(UserTypeEnum.Employee) && returnResult)
+            var userArr = string.IsNullOrEmpty(users) ? new string[0] : users.SplitTrim(_comma);
+            if (!user.UserType.Equals(UserTypeEnum.Employee) && returnResult && userArr.Length > 0)
             {
                 UserTypeEnum typeChildren = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), Enum.GetName(typeof(UserTypeEnum), (int)user.UserType + 1), true);
                 IEnumerable<User> listUserChildren = GetAllType(typeChildren, country);
@@ -651,12 +651,12 @@ namespace Service.Services
                 user.CountryId = (string)dataInput.CountryId;
                 user.FullName = (string)dataInput.FullName;
                 user.Groups = dataInput is ManagerUpdateInput ? (string)dataInput.Groups : (string)dataInput.Group;
-                user.Users = dataInput is EmployeeUpdateInput ? null : !user.CountryId.Equals((string)dataInput.CountryId) ? (string)dataInput.Users : string.Empty;
+                user.Users = dataInput is EmployeeUpdateInput ? null : user.CountryId.Equals((string)dataInput.CountryId) ? (string)dataInput.Users : string.Empty;
                 user.Address = (string)dataInput.AddressInfo.Address;
                 user.Phone = (string)dataInput.AddressInfo.PhoneNo;
                 user.Email = (string)dataInput.AddressInfo.Email;
                 user.ExpiredDate = (DateTime?)dataInput.ExpiredDate;
-                user.LastUpdatedBy = (string)dataInput.CurrentUser;
+                user.LastUpdatedBy = requestDto.CurrentUser;
                 user.LastUpdateDate = DateTime.Now;
                 #endregion
 

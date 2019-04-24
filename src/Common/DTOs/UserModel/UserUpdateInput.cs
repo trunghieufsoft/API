@@ -24,7 +24,6 @@ namespace Common.DTOs.UserModel
         public string Groups { get; set; }
 
         [StringLength(4096)]
-        [Required(ErrorMessage = "Users is required")]
         public string Users { get; set; }
 
         [Required(ErrorMessage = "Address infomation is required")]
@@ -55,7 +54,6 @@ namespace Common.DTOs.UserModel
         public string Group { get; set; }
 
         [StringLength(4096)]
-        [Required(ErrorMessage = "Users is required")]
         public string Users { get; set; }
 
         [Required(ErrorMessage = "Address infomation is required")]
