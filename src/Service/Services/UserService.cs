@@ -430,7 +430,7 @@ namespace Service.Services
             IList<int> indexLs = new List<int>();
             int randomStaff = 0, randomManager = 0;
             IList<DropdownList> RamdomList = new List<DropdownList>();
-            int had = hasValue.ToList().Count();
+            int had = (hasValue ?? new string[0]).Count();
             switch (type)
             {
                 case UserTypeEnum.Manager:
