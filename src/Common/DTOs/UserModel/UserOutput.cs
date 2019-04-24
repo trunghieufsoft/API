@@ -35,6 +35,7 @@ namespace Common.DTOs.UserModel
             Users = user.Users;
             Status = user.Status;
             StatusStr = user.StatusStr;
+            StartDate = user.StartDate;
             ExpiredDate = user.ExpiredDate;
             ExpiredIn = user.UserType.Equals(UserTypeEnum.SuperAdmin) ? "(--)" : (user.ExpiredDate.Value - user.StartDate.Value).TotalDays.ToString();
             Email = user.Email;
@@ -55,6 +56,7 @@ namespace Common.DTOs.UserModel
         public string UserType { get; set; }
         public StatusEnum Status { get; set; }
         public string StatusStr { get; set; }
+        public DateTime? StartDate { get; set; }
         public DateTime? ExpiredDate { get; set; }
         public string ExpiredIn { get; set; }
         public string Address { get; set; }
