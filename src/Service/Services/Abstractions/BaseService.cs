@@ -42,24 +42,16 @@ namespace Service.Services.Abstractions
                     if (propertyType == typeof(string))
                     {
                         string value = item.Value.ToUpper();
-                        string[] valueArr = value.SplitTrim(_comma);
-                        string column = Expression.Lambda<Func<string>>(parameterExp).Compile()().ToLower();
-                        if (input.SearchEqual.Any(key => key.ToLower().Equals(column)) && valueArr.Length > 1)
+                        string[] values = value.SplitTrim(_comma);
+                        string column = item.Key.ToLower();
+                        if (input.SearchEqual.Any(key => key.ToLower().Equals(column)) && values.Length > 1)
                         {
-                            MethodInfo method = typeof(Enumerable).GetMethod("Any", new[] { typeof(Func<IEnumerable<string>, bool>) });
-                            // valueArr.Expression
-                            left = Expression.Constant(valueArr, typeof(IEnumerable<string>));
+                            MethodInfo methodInfo = typeof(Enumerable).GetMethods(BindingFlags.Static | BindingFlags.Public).First(m => m.Name == "Any" && m.GetParameters().Count() == 2);
 
-                            right = Expression.Call(
-                                Expression.Constant(
-                                    Expression.Parameter(typeof(string), "y"),
-                                    typeof(string)
-                                ),
-                                typeof(string).GetMethod("Contains", new[] { typeof(string) }),
-                                parameterExp
-                            );
-                            // body expression: x => valueArr.Any(y => y.Contains(x.{item.Key}));
-                            expBody = Expression.Call(method, left, right);
+                            Expression<Func<string, bool>> predicate = x => values.Any(y => y.Equals(x));
+                            expBody = Expression.Call(methodInfo, Expression.PropertyOrField(parameterExpression, item.Key), predicate);
+
+                            Console.WriteLine(expBody.ToString());
                         }
                         else
                         {
