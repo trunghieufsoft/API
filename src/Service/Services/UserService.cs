@@ -686,7 +686,7 @@ namespace Service.Services
             }
             if (requestDto.Dto != null)
             {
-                requestDto.Dto.SearchEqual = (new string[] { "countryId", "users", "groups" }).ToList();
+                requestDto.Dto.SearchEqual = (new string[] { "groups" }).ToList();
             }
 
             List<Expression<Func<UserOutput, bool>>> listExpresion = GetExpressions<UserOutput>(requestDto.Dto, fieldNumber);

@@ -26,7 +26,7 @@ namespace Service.Services.Abstractions
             {
                 return null;
             }
-            ParameterExpression parameterExpression = Expression.Parameter(typeof(T));
+            ParameterExpression parameterExpression = Expression.Parameter(typeof(T), "x");
             Expression left, right, expBody;
             List<Expression<Func<T, bool>>> listExpresion = new List<Expression<Func<T, bool>>>();
             int indexCheck = 0;
@@ -34,16 +34,40 @@ namespace Service.Services.Abstractions
             {
                 if (!string.IsNullOrEmpty(item.Value) && indexCheck <= number && (typeof(T).GetProperty(item.Key.FirstCharToUpper()) != null))
                 {
+                    // x.{item.Key} etc: x.groups or x.countryId
                     MemberExpression parameterExp = Expression.Property(parameterExpression, item.Key);
                     PropertyInfo propertyInfo = (PropertyInfo)parameterExp.Member;
                     Type propertyType = propertyInfo.PropertyType;
+
                     if (propertyType == typeof(string))
                     {
-                        MethodInfo methodContains = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-                        left = Expression.Call(parameterExp, typeof(string).GetMethod("ToUpper", new Type[] { }));
                         string value = item.Value.ToUpper();
-                        right = Expression.Constant(value, typeof(string));
-                        expBody = Expression.Call(left, methodContains, right);
+                        string[] valueArr = value.SplitTrim(_comma);
+                        string column = Expression.Lambda<Func<string>>(parameterExp).Compile()().ToLower();
+                        if (input.SearchEqual.Any(key => key.ToLower().Equals(column)) && valueArr.Length > 1)
+                        {
+                            MethodInfo method = typeof(Enumerable).GetMethod("Any", new[] { typeof(Func<IEnumerable<string>, bool>) });
+                            // valueArr.Expression
+                            left = Expression.Constant(valueArr, typeof(IEnumerable<string>));
+
+                            right = Expression.Call(
+                                Expression.Constant(
+                                    Expression.Parameter(typeof(string), "y"),
+                                    typeof(string)
+                                ),
+                                typeof(string).GetMethod("Contains", new[] { typeof(string) }),
+                                parameterExp
+                            );
+                            // body expression: x => valueArr.Any(y => y.Contains(x.{item.Key}));
+                            expBody = Expression.Call(method, left, right);
+                        }
+                        else
+                        {
+                            MethodInfo methodContains = typeof(string).GetMethod("Contains", new[] { typeof(string) });
+                            left = Expression.Call(parameterExp, typeof(string).GetMethod("ToUpper", new Type[] { }));
+                            right = Expression.Constant(value, typeof(string));
+                            expBody = Expression.Call(left, methodContains, right);
+                        }
                     }
                     else if (propertyType == typeof(bool?))
                     {
@@ -54,8 +78,7 @@ namespace Service.Services.Abstractions
                         var value = propertyType.IsEnum ? Enum.Parse(propertyType, item.Value.FirstCharToUpper()) : Int32.Parse(item.Value);
                         expBody = Expression.Equal(parameterExp, Expression.Constant(value, propertyType));
                     }
-                    Expression<Func<T, bool>> condition = Expression.Lambda<Func<T, bool>>(expBody, parameterExpression);
-                    listExpresion.Add(condition);
+                    listExpresion.Add(Expression.Lambda<Func<T, bool>>(expBody, parameterExpression));
                 }
                 indexCheck++;
             }
