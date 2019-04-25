@@ -10,6 +10,8 @@ using Common.Core.Extensions;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using System.Collections.Generic;
+using Common.Core.Linq.Extensions;
+using StringExtensions = Common.Core.Linq.Extensions.StringExtensions;
 
 namespace Service.Services.Abstractions
 {
@@ -22,48 +24,41 @@ namespace Service.Services.Abstractions
         protected readonly int _randomManager = 5;
         protected virtual List<Expression<Func<T, bool>>> GetExpressions<T>(SearchInput input, int number)
         {
-            if (input == null || input.KeySearch == null)
-            {
-                return null;
-            }
-            ParameterExpression parameterExpression = Expression.Parameter(typeof(T), "x");
-            Expression left, right, expBody;
-            List<Expression<Func<T, bool>>> listExpresion = new List<Expression<Func<T, bool>>>();
+            if (input == null || input.KeySearch == null) return null;
             int indexCheck = 0;
+            Expression expBody;
+            string Key = string.Empty;
+            ParameterExpression parameterExpression = Expression.Parameter(typeof(T), "x");
+            List<Expression<Func<T, bool>>> listExpresion = new List<Expression<Func<T, bool>>>();
             foreach (KeyValuePair<string, string> item in input.KeySearch)
             {
-                if (!string.IsNullOrEmpty(item.Value) && indexCheck <= number && (typeof(T).GetProperty(item.Key.FirstCharToUpper()) != null))
+                Key = item.Key.FirstCharToUpper();
+                if (!string.IsNullOrEmpty(item.Value) && indexCheck <= number && (typeof(T).GetProperty(Key) != null))
                 {
-                    // x.{item.Key} etc: x.groups or x.countryId
-                    MemberExpression parameterExp = Expression.Property(parameterExpression, item.Key);
+                    MemberExpression parameterExp = Expression.Property(parameterExpression, Key);
                     PropertyInfo propertyInfo = (PropertyInfo)parameterExp.Member;
                     Type propertyType = propertyInfo.PropertyType;
 
                     if (propertyType == typeof(string))
                     {
                         string value = item.Value.ToUpper();
-                        string[] values = value.SplitTrim(_comma);
-                        string column = item.Key.ToLower();
-                        if (input.SearchEqual.Any(key => key.ToLower().Equals(column)) && values.Length > 1)
+                        string column = Key.ToLower();
+                        if (input.SearchEqual.Any(e => e.ToLower().Equals(column)) && value.Split(_comma).Length > 1)
                         {
-                            MethodInfo methodInfo = typeof(Enumerable).GetMethods(BindingFlags.Static | BindingFlags.Public).First(m => m.Name == "Any" && m.GetParameters().Count() == 2);
-
-                            Expression<Func<string, bool>> predicate = x => values.Any(y => y.Equals(x));
-                            expBody = Expression.Call(methodInfo, Expression.PropertyOrField(parameterExpression, item.Key), predicate);
-
-                            Console.WriteLine(expBody.ToString());
+                            MethodInfo methodInfo = typeof(StringExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static).Single(m => m.Name == "BuildAny");
+                            expBody = Expression.Call(parameterExp, methodInfo, Expression.Constant(item.Value, typeof(string)));
                         }
                         else
                         {
                             MethodInfo methodContains = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-                            left = Expression.Call(parameterExp, typeof(string).GetMethod("ToUpper", new Type[] { }));
-                            right = Expression.Constant(value, typeof(string));
+                            Expression left = Expression.Call(parameterExp, typeof(string).GetMethod("ToUpper", new Type[] { }));
+                            Expression right = Expression.Constant(value, typeof(string));
                             expBody = Expression.Call(left, methodContains, right);
                         }
                     }
                     else if (propertyType == typeof(bool?))
                     {
-                        expBody = Expression.Equal(parameterExp, Expression.Constant(true, typeof(bool?)));
+                        expBody = Expression.Equal(parameterExp, Expression.Constant(true, propertyType));
                     }
                     else
                     {

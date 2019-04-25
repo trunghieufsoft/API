@@ -1,10 +1,10 @@
-﻿using Common.Core.Enumerations;
-using System;
-using System.Globalization;
+﻿using System;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Security.Cryptography;
 using System.Text;
+using System.Globalization;
+using System.Linq.Expressions;
+using Common.Core.Enumerations;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace Common.Core.Extensions
@@ -718,7 +718,7 @@ namespace Common.Core.Extensions
         public static string GenerateCode(this EnumIDGenerate enumCode, int index)
         {
             byte[] byteArr = Encoding.UTF8.GetBytes(index.ToString());
-            string base64 =  Convert.ToBase64String(byteArr);
+            string base64 = Convert.ToBase64String(byteArr);
             switch (enumCode)
             {
                 case EnumIDGenerate.SuperAdmin:
