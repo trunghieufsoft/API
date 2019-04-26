@@ -12,11 +12,13 @@ namespace Common.Core.Extensions
 {
     public static class StringExtensions
     {
-        // Constants
+        #region Constants
         public static readonly string _comma = ",";
         public static readonly string _all = "_all";
         public static readonly string _ = string.Empty;
+        #endregion
 
+        #region Common default
         /// <summary>
         /// Adds a char to end of given string if it does not ends with the char.
         /// </summary>
@@ -626,7 +628,9 @@ namespace Common.Core.Extensions
 
             return stringValue.Left(maxLength - postfix.Length) + postfix;
         }
+        #endregion
 
+        #region Custom default
         public static string FirstCharToUpper(this string stringValue)
         {
             if (string.IsNullOrEmpty(stringValue))
@@ -751,7 +755,9 @@ namespace Common.Core.Extensions
             byte[] byteArr = Convert.FromBase64String(Code);
             return Encoding.UTF8.GetString(byteArr);
         }
+        #endregion
 
+        #region Dynamic Linq
         public static bool CompareAny(string source, string value)
         {
             if (string.IsNullOrEmpty(source))
@@ -766,20 +772,6 @@ namespace Common.Core.Extensions
                 return values.Any(val => val.Equals(source));
             return sources.Any(sorc => sorc.Equals(value));
         }
-
-        public static bool ExtCompareTo(this string source, string value)
-        {
-            if (string.IsNullOrEmpty(source))
-                throw new ArgumentNullException("source is require!");
-            if (string.IsNullOrEmpty(value))
-                return false;
-            string[] sources = source.ToUpper().SplitTrim(_comma);
-            string[] values = value.ToUpper().SplitTrim(_comma);
-            if (sources.Length > 1 && values.Length > 1)
-                return sources.Any(sorc => values.Any(val => val.Equals(sorc)));
-            if (value.Length > 1)
-                return values.Any(val => val.Equals(source));
-            return sources.Any(sorc => sorc.Equals(value));
-        }
+        #endregion
     }
 }
