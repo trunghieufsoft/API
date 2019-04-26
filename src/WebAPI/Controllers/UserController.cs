@@ -248,6 +248,7 @@ namespace WebApi.Controllers
             SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
             SigningCredentials credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             string fullName = string.IsNullOrEmpty(userInfo.FullName) ? userInfo.Username : userInfo.FullName;
+            string Country = userInfo.CountryId == null ? "ALL" : userInfo.CountryId;
 
             string tokenGuid = Guid.NewGuid().ToString();
             DateTime expried = Clock.Now.AddMinutes(Math.Max(Convert.ToDouble(_config["Config:TokenExpiryTimeInMinutes"]), 5));
@@ -255,6 +256,8 @@ namespace WebApi.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub,  userInfo.Username),
                 new Claim("Username", userInfo.Username),
                 new Claim("Fullname", fullName),
+                new Claim("Country", Country),
+                new Claim("Group", userInfo.Groups),
                 new Claim("UserType", userInfo.UserType),
                 new Claim("ExpiredPassword", userInfo.ExpiredPassword),
                 new Claim("UserId", userInfo.Id.ToString()),

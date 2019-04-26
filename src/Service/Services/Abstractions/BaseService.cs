@@ -22,40 +22,48 @@ namespace Service.Services.Abstractions
         protected readonly int _randomManager = 5;
         protected virtual List<Expression<Func<T, bool>>> GetExpressions<T>(SearchInput input, int number)
         {
-            if (input == null || input.KeySearch == null)
-            {
-                return null;
-            }
-            ParameterExpression parameterExpression = Expression.Parameter(typeof(T));
-            Expression left, right, expBody;
-            List<Expression<Func<T, bool>>> listExpresion = new List<Expression<Func<T, bool>>>();
+            if (input == null || input.KeySearch == null) return null;
             int indexCheck = 0;
+            Expression expBody;
+            string Key = string.Empty;
+            ParameterExpression parameterExpression = Expression.Parameter(typeof(T), "x");
+            List<Expression<Func<T, bool>>> listExpresion = new List<Expression<Func<T, bool>>>();
             foreach (KeyValuePair<string, string> item in input.KeySearch)
             {
-                if (!string.IsNullOrEmpty(item.Value) && indexCheck <= number && (typeof(T).GetProperty(item.Key.FirstCharToUpper()) != null))
+                Key = item.Key.FirstCharToUpper();
+                if (!string.IsNullOrEmpty(item.Value) && indexCheck <= number && (typeof(T).GetProperty(Key) != null))
                 {
-                    MemberExpression parameterExp = Expression.Property(parameterExpression, item.Key);
+                    MemberExpression parameterExp = Expression.Property(parameterExpression, Key);
                     PropertyInfo propertyInfo = (PropertyInfo)parameterExp.Member;
                     Type propertyType = propertyInfo.PropertyType;
+
                     if (propertyType == typeof(string))
                     {
-                        MethodInfo methodContains = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-                        left = Expression.Call(parameterExp, typeof(string).GetMethod("ToUpper", new Type[] { }));
                         string value = item.Value.ToUpper();
-                        right = Expression.Constant(value, typeof(string));
-                        expBody = Expression.Call(left, methodContains, right);
+                        string column = Key.ToLower();
+                        if (input.SearchEqual.Any(e => e.ToLower().Equals(column)) && value.Split(_comma).Length > 1)
+                        {
+                            MethodInfo methodInfo = typeof(StringExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static).Single(m => m.Name == "CompareAny");
+                            expBody = Expression.Call(methodInfo, parameterExp, Expression.Constant(item.Value, typeof(string)));
+                        }
+                        else
+                        {
+                            MethodInfo methodContains = typeof(string).GetMethod("Contains", new[] { typeof(string) });
+                            Expression left = Expression.Call(parameterExp, typeof(string).GetMethod("ToUpper", new Type[] { }));
+                            Expression right = Expression.Constant(value, typeof(string));
+                            expBody = Expression.Call(left, methodContains, right);
+                        }
                     }
                     else if (propertyType == typeof(bool?))
                     {
-                        expBody = Expression.Equal(parameterExp, Expression.Constant(true, typeof(bool?)));
+                        expBody = Expression.Equal(parameterExp, Expression.Constant(true, propertyType));
                     }
                     else
                     {
                         var value = propertyType.IsEnum ? Enum.Parse(propertyType, item.Value.FirstCharToUpper()) : Int32.Parse(item.Value);
                         expBody = Expression.Equal(parameterExp, Expression.Constant(value, propertyType));
                     }
-                    Expression<Func<T, bool>> condition = Expression.Lambda<Func<T, bool>>(expBody, parameterExpression);
-                    listExpresion.Add(condition);
+                    listExpresion.Add(Expression.Lambda<Func<T, bool>>(expBody, parameterExpression));
                 }
                 indexCheck++;
             }

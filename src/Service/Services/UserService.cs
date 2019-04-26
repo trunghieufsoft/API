@@ -76,7 +76,7 @@ namespace Service.Services
                     throw new DefinedException(ErrorCodeEnum.NotAuthorized);
                 }
                 var users = string.IsNullOrWhiteSpace(user.Users) ? string.Empty : user.Users;
-                user.Users = users + _comma + GenerateUsers(user.UserType, user.CountryId, user.Groups, string.IsNullOrEmpty(users) ? null : user.Users.Split(_comma));
+                user.Users = users + (string.IsNullOrEmpty(users) ? string.Empty : _comma) + GenerateUsers(user.UserType, user.CountryId, user.Groups, string.IsNullOrEmpty(users) ? null : user.Users.Split(_comma));
                 _userRepository.Update(user);
             }
             catch (Exception e)
@@ -176,13 +176,13 @@ namespace Service.Services
         }
 
         public SearchOutput SearchManager(DataInput<SearchInput> requestDto)
-            => Search(requestDto, UserTypeEnum.Manager, 5);
+            => Search(requestDto, UserTypeEnum.Manager, 6);
 
         public SearchOutput SearchStaff(DataInput<SearchInput> requestDto)
             => Search(requestDto, UserTypeEnum.Staff, 7);
 
         public SearchOutput SearchEmployee(DataInput<SearchInput> requestDto)
-            => Search(requestDto, UserTypeEnum.Employee, 5);
+            => Search(requestDto, UserTypeEnum.Employee, 7);
 
         public void AllowUnselectGroups(UnselectGroupsInput input)
         {
@@ -409,7 +409,7 @@ namespace Service.Services
 
                 case UserTypeEnum.Staff:
                     TStaff = TStaff.AsQueryable().Where(x => !string.IsNullOrEmpty(x.Users));
-                    TEmployee = TEmployee.Where(c => !TStaff.Any(s => s.Users.SplitTrim(_comma).Any(x => x.Equals(c.Code)))).AsQueryable()
+                    TStaff = TStaff.Where(s => !TManagers.Any(m => m.Users.SplitTrim(_comma).Any(x => x.Equals(s.Code)))).AsQueryable()
                         .WhereIf(!string.IsNullOrEmpty(groups), x => groups.SplitTrim(_comma).Any(g => g.Equals(x.Groups)));
 
                     return TEmployee.Count() > 0 ?
@@ -430,7 +430,7 @@ namespace Service.Services
             IList<int> indexLs = new List<int>();
             int randomStaff = 0, randomManager = 0;
             IList<DropdownList> RamdomList = new List<DropdownList>();
-            int had = hasValue.ToList().Count();
+            int had = (hasValue ?? new string[0]).Count();
             switch (type)
             {
                 case UserTypeEnum.Manager:
@@ -590,9 +590,8 @@ namespace Service.Services
         private bool AllowUnselectGroups(string country, string groups, string users, User user)
         {
             bool returnResult = true;
-            var userArr = users.SplitTrim(_comma);
-            var groupsArr = groups.SplitTrim(_comma);
-            if (!user.CountryId.Equals(country) || groupsArr.Any(g => user.Groups.SplitTrim(_comma).Any(x => x.Equals(g))))
+            var groupsArr = string.IsNullOrEmpty(groups) ? new string[0] : groups.SplitTrim(_comma);
+            if (!user.CountryId.Equals(country) || (groupsArr.Length > 0 && groupsArr.Any(g => user.Groups.SplitTrim(_comma).Any(x => x.Equals(g)))))
                 return returnResult;
             //check has any account used user?
             if (!user.UserType.Equals(UserTypeEnum.SuperAdmin))
@@ -611,7 +610,8 @@ namespace Service.Services
             }
 
             //check user list has reference to groups
-            if (!user.UserType.Equals(UserTypeEnum.Employee) && returnResult)
+            var userArr = string.IsNullOrEmpty(users) ? new string[0] : users.SplitTrim(_comma);
+            if (!user.UserType.Equals(UserTypeEnum.Employee) && returnResult && userArr.Length > 0)
             {
                 UserTypeEnum typeChildren = (UserTypeEnum)Enum.Parse(typeof(UserTypeEnum), Enum.GetName(typeof(UserTypeEnum), (int)user.UserType + 1), true);
                 IEnumerable<User> listUserChildren = GetAllType(typeChildren, country);
@@ -651,12 +651,12 @@ namespace Service.Services
                 user.CountryId = (string)dataInput.CountryId;
                 user.FullName = (string)dataInput.FullName;
                 user.Groups = dataInput is ManagerUpdateInput ? (string)dataInput.Groups : (string)dataInput.Group;
-                user.Users = dataInput is EmployeeUpdateInput ? null : !user.CountryId.Equals((string)dataInput.CountryId) ? (string)dataInput.Users : string.Empty;
+                user.Users = dataInput is EmployeeUpdateInput ? null : user.CountryId.Equals((string)dataInput.CountryId) ? (string)dataInput.Users : string.Empty;
                 user.Address = (string)dataInput.AddressInfo.Address;
                 user.Phone = (string)dataInput.AddressInfo.PhoneNo;
                 user.Email = (string)dataInput.AddressInfo.Email;
                 user.ExpiredDate = (DateTime?)dataInput.ExpiredDate;
-                user.LastUpdatedBy = (string)dataInput.CurrentUser;
+                user.LastUpdatedBy = requestDto.CurrentUser;
                 user.LastUpdateDate = DateTime.Now;
                 #endregion
 
@@ -686,7 +686,7 @@ namespace Service.Services
             }
             if (requestDto.Dto != null)
             {
-                requestDto.Dto.SearchEqual = (new string[] { "countryId", "users", "groups" }).ToList();
+                requestDto.Dto.SearchEqual = (new string[] { "groups" }).ToList();
             }
 
             List<Expression<Func<UserOutput, bool>>> listExpresion = GetExpressions<UserOutput>(requestDto.Dto, fieldNumber);
@@ -813,8 +813,8 @@ namespace Service.Services
         }
 
         private bool AllowDeleteUser(UserTypeEnum type, User user)
-            => !(string.IsNullOrEmpty(user.Users) ||
-            GetAllType(type, user.CountryId).Where(u => !string.IsNullOrEmpty(u.Users)).Any(u => u.Users.SplitTrim(_comma).Any(x => x.Equals(user.Code))));
+            => (string.IsNullOrEmpty(user.Users) ||
+            !GetAllType(type, user.CountryId).Where(u => !string.IsNullOrEmpty(u.Users)).Any(u => u.Users.SplitTrim(_comma).Any(x => x.Equals(user.Code))));
 
         private User GetUserContact(string username)
             => _userRepository.Get(x => x.Username.Equals(username));
@@ -826,7 +826,7 @@ namespace Service.Services
             => _userRepository.GetMany(x => x.UserType.Equals(type)).WhereIf(country != null, x => x.CountryId.Equals(country));
 
         private string GenerateUsers(UserTypeEnum type, string countryId, string groups, string[] hasValue = null)
-            => string.Join(_comma, GetUsersHasNotBeenAssignedByGroupsRamdum(type, countryId, groups, hasValue).Select(x => x.Code));
+            => string.Join(_comma, GetUsersHasNotBeenAssignedByGroupsRamdum(type, countryId, groups, hasValue).Select(x => x.Id));
         #endregion
     }
 }

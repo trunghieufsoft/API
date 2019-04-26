@@ -33,6 +33,11 @@ namespace WebAPI.Controllers
             => Json(data: _commonService.GetAllCountry());
 
         [HttpGet]
+        [Route("GetDetailCountry")]
+        public IActionResult GetDetailCountry()
+            => Json(data: _commonService.GetDetailCountry(GetCurrentUser()));
+
+        [HttpGet]
         [Route("GetUsersAssign")]
         public IActionResult GetUsersAssign(string username)
             => Json(data: _commonService.GetUsersAssign(username));

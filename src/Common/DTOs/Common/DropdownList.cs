@@ -2,19 +2,19 @@
 {
     public class DropdownList
     {
-        public DropdownList(object code = null, string user = null, string name = null)
+        public DropdownList(object id = null, string user = null, string name = null)
         {
-            Code = code;
+            Id = id;
             User = user;
             Name = name;
         }
 
-        public DropdownList(object code = null, string name = null)
+        public DropdownList(object id = null, string name = null)
         {
-            Code = code;
+            Id = id;
             Name = name;
         }
-        public object Code { get; set; }
+        public object Id { get; set; }
         public string Name { get; set; }
         public string User { get; set; }
     }

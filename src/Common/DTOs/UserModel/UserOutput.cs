@@ -31,13 +31,16 @@ namespace Common.DTOs.UserModel
             Username = user.Username;
             FullName = user.FullName;
             Groups = user.Groups;
-            GroupName = group != null ? group.GroupName : null;
+            GroupName = group?.GroupName;
             Users = user.Users;
             Status = user.Status;
             StatusStr = user.StatusStr;
+            StartDate = user.StartDate;
             ExpiredDate = user.ExpiredDate;
             ExpiredIn = user.UserType.Equals(UserTypeEnum.SuperAdmin) ? "(--)" : (user.ExpiredDate.Value - user.StartDate.Value).TotalDays.ToString();
-            AddressInfo = new AddressInfo(user);
+            Email = user.Email;
+            Address = user.Address;
+            PhoneNo = user.Phone;
             InitializeInfo = new InitializeInfo(user);
         }
 
@@ -53,9 +56,12 @@ namespace Common.DTOs.UserModel
         public string UserType { get; set; }
         public StatusEnum Status { get; set; }
         public string StatusStr { get; set; }
+        public DateTime? StartDate { get; set; }
         public DateTime? ExpiredDate { get; set; }
         public string ExpiredIn { get; set; }
-        public AddressInfo AddressInfo { get; set; }
+        public string Address { get; set; }
+        public string PhoneNo { get; set; }
+        public string Email { get; set; }
         public string ExpiredPassword { get; set; }
         public InitializeInfo InitializeInfo { get; set; }
         #endregion

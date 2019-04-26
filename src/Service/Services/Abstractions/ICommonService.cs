@@ -11,6 +11,8 @@ namespace Service.Services.Abstractions
 
         IEnumerable<DropdownList> GetAllCountry();
 
+        DetailCountryInfo GetDetailCountry(string username);
+
         UserAssignmentInfo GetUsersAssign(string username);
 
         IEnumerable<UserAssignmentInfo> GetUsersAllTypeAssignByCountry(UserTypeEnum userType, string country = null);

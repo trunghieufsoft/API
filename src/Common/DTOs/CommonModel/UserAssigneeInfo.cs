@@ -1,13 +1,22 @@
-﻿using Common.DTOs.Common;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Common.DTOs.CommonModel
 {
     public class UserAssignmentInfo
     {
+        public string Code { get; set; }
         public string Username { get; set; }
         public string FullName { get; set; }
-        public IEnumerable<DropdownList> Users { get; set; } = new List<DropdownList>();
-        public int TotalUser { get; set; } = 0;
+        public IEnumerable<UserAssignmentInfo> Users { get; set; } = new List<UserAssignmentInfo>();
+        public int TotalUser {
+            get {
+                return Users.ToList().Count();
+            }
+            set
+            {
+                TotalUser = value;
+            }
+        }
     }
 }
