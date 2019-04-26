@@ -10,8 +10,6 @@ using Common.Core.Extensions;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using System.Collections.Generic;
-using Common.Core.Linq.Extensions;
-using StringExtensions = Common.Core.Linq.Extensions.StringExtensions;
 
 namespace Service.Services.Abstractions
 {
@@ -45,8 +43,8 @@ namespace Service.Services.Abstractions
                         string column = Key.ToLower();
                         if (input.SearchEqual.Any(e => e.ToLower().Equals(column)) && value.Split(_comma).Length > 1)
                         {
-                            MethodInfo methodInfo = typeof(StringExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static).Single(m => m.Name == "BuildAny");
-                            expBody = Expression.Call(parameterExp, methodInfo, Expression.Constant(item.Value, typeof(string)));
+                            MethodInfo methodInfo = typeof(StringExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static).Single(m => m.Name == "CompareAny");
+                            expBody = Expression.Call(methodInfo, parameterExp, Expression.Constant(item.Value, typeof(string)));
                         }
                         else
                         {

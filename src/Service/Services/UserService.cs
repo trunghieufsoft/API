@@ -400,8 +400,8 @@ namespace Service.Services
             {
                 case UserTypeEnum.Manager:
                     TManagers = TManagers.AsQueryable().Where(x => !string.IsNullOrEmpty(x.Users));
-                    TStaff = TStaff.Where(s => !TManagers.Any(m => m.Users.SplitTrim(_comma).Any(x => x.Equals(s.Code)))).AsQueryable()
-                        .WhereIf(!string.IsNullOrEmpty(groups), x => groups.SplitTrim(_comma).Any(g => g.Equals(x.Groups)));
+                    TStaff = TStaff.Where(s => !TManagers.Any(m => m.Users.ExtCompareTo(s.Code))).AsQueryable()
+                        .WhereIf(!string.IsNullOrEmpty(groups), x => groups.ExtCompareTo(x.Groups));
 
                     return TStaff.Count() > 0 ?
                         TStaff.AsQueryable().Select(x => new DropdownList(x.Code, x.Username)).AsEnumerable()
@@ -409,8 +409,8 @@ namespace Service.Services
 
                 case UserTypeEnum.Staff:
                     TStaff = TStaff.AsQueryable().Where(x => !string.IsNullOrEmpty(x.Users));
-                    TEmployee = TEmployee.Where(c => !TStaff.Any(s => s.Users.SplitTrim(_comma).Any(x => x.Equals(c.Code)))).AsQueryable()
-                        .WhereIf(!string.IsNullOrEmpty(groups), x => groups.SplitTrim(_comma).Any(g => g.Equals(x.Groups)));
+                    TEmployee = TEmployee.Where(c => !TStaff.Any(s => s.Users.ExtCompareTo(c.Code))).AsQueryable()
+                        .WhereIf(!string.IsNullOrEmpty(groups), x => groups.ExtCompareTo(x.Groups));
 
                     return TEmployee.Count() > 0 ?
                         TEmployee.AsQueryable().Select(x => new DropdownList(x.Code, x.Username)).AsEnumerable()
@@ -591,7 +591,7 @@ namespace Service.Services
         {
             bool returnResult = true;
             var groupsArr = string.IsNullOrEmpty(groups) ? new string[0] : groups.SplitTrim(_comma);
-            if (!user.CountryId.Equals(country) || (groupsArr.Length > 0 && groupsArr.Any(g => user.Groups.SplitTrim(_comma).Any(x => x.Equals(g)))))
+            if (!user.CountryId.Equals(country) || (groupsArr.Length > 0 && groupsArr.Any(g => user.Groups.ExtCompareTo(g))))
                 return returnResult;
             //check has any account used user?
             if (!user.UserType.Equals(UserTypeEnum.SuperAdmin))
@@ -729,7 +729,7 @@ namespace Service.Services
                 case UserTypeEnum.Manager:
                     var staffUsers = GetAllType(UserTypeEnum.Staff, user.CountryId ?? null)
                         .Select(row => new UserOutput(row, row.UserType.Equals(UserTypeEnum.Staff) || row.UserType.Equals(UserTypeEnum.Employee) ? GetGroupContact(row.Groups) : null));
-                    return staffUsers.Where(staff => user.Users.SplitTrim(_comma).Any(x => x.Equals(staff.Code)));
+                    return staffUsers.Where(staff => user.Users.ExtCompareTo(staff.Code));
 
                 case UserTypeEnum.Staff:
                     if (user.UserType.Equals(UserTypeEnum.Manager))
@@ -739,7 +739,7 @@ namespace Service.Services
                     IEnumerable<UserOutput> filterStaff = queryResult.Where(staff => !string.IsNullOrEmpty(staff.Users)).ToList();
                     if (filterStaff.Count() == 0)
                         return new List<UserOutput>().AsQueryable();
-                    IEnumerable<UserOutput> result = employeeUsers.Where(employee => filterStaff.Any(staff => staff.Users.SplitTrim(_comma).Any(x => x.Equals(employee.Code))));
+                    IEnumerable<UserOutput> result = employeeUsers.Where(employee => filterStaff.Any(staff => staff.Users.ExtCompareTo(employee.Code)));
                     return result.AsQueryable();
 
                 case UserTypeEnum.Employee:
@@ -750,7 +750,7 @@ namespace Service.Services
                         return SearchAuthority(queryResult, user, user.UserType);
                     }
                     IQueryable<UserOutput> employeeUser = GetAllType(UserTypeEnum.Employee, user.CountryId ?? null).Select(row => new UserOutput(row, null));
-                    return employeeUser.Where(employee => user.Users.SplitTrim(_comma).Any(x => x.Equals(employee.Code)));
+                    return employeeUser.Where(employee => user.Users.ExtCompareTo(employee.Code));
 
                 default:
                 case UserTypeEnum.SuperAdmin:
@@ -814,7 +814,7 @@ namespace Service.Services
 
         private bool AllowDeleteUser(UserTypeEnum type, User user)
             => (string.IsNullOrEmpty(user.Users) ||
-            !GetAllType(type, user.CountryId).Where(u => !string.IsNullOrEmpty(u.Users)).Any(u => u.Users.SplitTrim(_comma).Any(x => x.Equals(user.Code))));
+            !GetAllType(type, user.CountryId).Where(u => !string.IsNullOrEmpty(u.Users)).Any(u => u.Users.ExtCompareTo(user.Code)));
 
         private User GetUserContact(string username)
             => _userRepository.Get(x => x.Username.Equals(username));

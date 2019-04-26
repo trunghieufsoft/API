@@ -6,11 +6,17 @@ using System.Linq.Expressions;
 using Common.Core.Enumerations;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using Common.Core.Models;
 
 namespace Common.Core.Extensions
 {
     public static class StringExtensions
     {
+        // Constants
+        public static readonly string _comma = ",";
+        public static readonly string _all = "_all";
+        public static readonly string _ = string.Empty;
+
         /// <summary>
         /// Adds a char to end of given string if it does not ends with the char.
         /// </summary>
@@ -139,7 +145,7 @@ namespace Common.Core.Extensions
         }
 
         /// <summary>
-        /// Indicates whether this string is null or an System.String.Empty string.
+        /// Indicates whether this string is null or an System._ string.
         /// </summary>
         /// <param name="stringValue">
         /// The string Value.
@@ -603,9 +609,9 @@ namespace Common.Core.Extensions
                 throw new ArgumentNullException(nameof(stringValue));
             }
 
-            if (stringValue == string.Empty || maxLength == 0)
+            if (stringValue == _ || maxLength == 0)
             {
-                return string.Empty;
+                return _;
             }
 
             if (stringValue.Length <= maxLength)
@@ -625,7 +631,7 @@ namespace Common.Core.Extensions
         {
             if (string.IsNullOrEmpty(stringValue))
             {
-                return string.Empty;
+                return _;
             }
             stringValue = stringValue.Trim();
             return char.ToUpper(stringValue[0]) + stringValue.Substring(1);
@@ -639,7 +645,7 @@ namespace Common.Core.Extensions
                 case "": throw new ArgumentException($"{nameof(stringValue)} cannot be empty", nameof(stringValue));
                 default:
                     string[] arr = stringValue.Split(separator);
-                    string element = string.Empty;
+                    string element = _;
                     int i = 0;
                     arr.ForEach(item => {
                         element = item.Trim();
@@ -679,10 +685,10 @@ namespace Common.Core.Extensions
             {
                 case null: throw new ArgumentNullException(nameof(stringValue));
                 case "": throw new ArgumentException($"{nameof(stringValue)} cannot be empty", nameof(stringValue));
-                case "All":
-                    return string.Join(",", query.Select(selector));
+                case "_all":
+                    return string.Join(_comma, query.Select(selector));
                 default:
-                    return stringValue.SplitJoin(",");
+                    return stringValue.SplitJoin(_comma);
             }
         }
 
@@ -705,7 +711,7 @@ namespace Common.Core.Extensions
                 case "": throw new ArgumentException($"{nameof(stringValue)} cannot be empty", nameof(stringValue));
                 default:
                     string[] arr = stringValue.Split(separator);
-                    string element = string.Empty;
+                    string element = _;
                     int i = 0;
                     arr.ForEach(item => {
                         arr[i] = item.Trim();
@@ -744,6 +750,36 @@ namespace Common.Core.Extensions
             Code = Code.Substring(0, Code.Length - 2);
             byte[] byteArr = Convert.FromBase64String(Code);
             return Encoding.UTF8.GetString(byteArr);
+        }
+
+        public static bool CompareAny(string source, string value)
+        {
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentNullException("source is require!");
+            if (string.IsNullOrEmpty(value))
+                return false;
+            string[] sources = source.ToUpper().SplitTrim(_comma);
+            string[] values = value.ToUpper().SplitTrim(_comma);
+            if (sources.Length > 1 && values.Length > 1)
+                return sources.Any(sorc => values.Any(val => val.Equals(sorc)));
+            if (value.Length > 1)
+                return values.Any(val => val.Equals(source));
+            return sources.Any(sorc => sorc.Equals(value));
+        }
+
+        public static bool ExtCompareTo(this string source, string value)
+        {
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentNullException("source is require!");
+            if (string.IsNullOrEmpty(value))
+                return false;
+            string[] sources = source.ToUpper().SplitTrim(_comma);
+            string[] values = value.ToUpper().SplitTrim(_comma);
+            if (sources.Length > 1 && values.Length > 1)
+                return sources.Any(sorc => values.Any(val => val.Equals(sorc)));
+            if (value.Length > 1)
+                return values.Any(val => val.Equals(source));
+            return sources.Any(sorc => sorc.Equals(value));
         }
     }
 }

@@ -55,7 +55,7 @@ namespace Service.Services
             {
                 country = _countryRepository.GetAll().WhereIf(!string.IsNullOrEmpty(user.CountryId), x => x.CountryId.Equals(user.CountryId))
                     .Select(row => new DropdownList(row.CountryId, row.CountryName));
-                groups = _groupRepository.GetAll().AsEnumerable().WhereIf(!user.Groups.Equals(_all), item => user.Groups.SplitTrim(_comma).Any(g => g.Equals(item.GroupCode)))
+                groups = _groupRepository.GetAll().AsEnumerable().WhereIf(!user.Groups.Equals(_all), item => user.Groups.ExtCompareTo(item.GroupCode))
                     .Select(row => new DropdownList(row.GroupCode, row.GroupName));
                 users = GetUsersAllTypeAssignByCountry(user.UserType, user.CountryId);
             }
@@ -114,7 +114,7 @@ namespace Service.Services
             {
                 if (string.IsNullOrEmpty(user.Users))
                     return new List<UserAssignmentInfo>();
-                users = users.Where(u => user.Users.SplitTrim(_comma).Any(x => x == u.Code));
+                users = users.Where(u => user.Users.ExtCompareTo(u.Code));
             }
             return users.Select(row => new UserAssignmentInfo()
             {
