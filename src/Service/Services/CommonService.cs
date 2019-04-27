@@ -51,6 +51,7 @@ namespace Service.Services
             IEnumerable<DropdownList> country = new List<DropdownList>();
             IEnumerable<DropdownList> groups = new List<DropdownList>();
             IEnumerable<UserAssignmentInfo> users = new List<UserAssignmentInfo>();
+            IEnumerable<UserAssignmentByTypeInfo> userByType = new List<UserAssignmentByTypeInfo>();
             if (user != null)
             {
                 country = _countryRepository.GetAll().WhereIf(!string.IsNullOrEmpty(user.CountryId), x => x.CountryId.Equals(user.CountryId))
@@ -58,12 +59,14 @@ namespace Service.Services
                 groups = _groupRepository.GetAll().AsEnumerable().WhereIf(!user.Groups.Equals(_all), item => user.Groups.SplitTrim(_comma).Any(g => g.Equals(item.GroupCode)))
                     .Select(row => new DropdownList(row.GroupCode, row.GroupName));
                 users = GetUsersAllTypeAssignByCountry(user.UserType, user.CountryId);
+                userByType = GetUserAssignmentByType(user.CountryId);
             }
             return new DetailCountryInfo()
             {
                 Countries = country,
                 Users = users,
-                Groups = groups
+                Groups = groups,
+                UserByType = userByType
             };
         }
 
@@ -104,6 +107,15 @@ namespace Service.Services
         #endregion
 
         #region Method
+        private IEnumerable<UserAssignmentByTypeInfo> GetUserAssignmentByType(string countryId = null)
+        {
+            return new UserAssignmentByTypeInfo[] {
+                new UserAssignmentByTypeInfo(GetUsersAllTypeAssignByCountry(UserTypeEnum.Manager, countryId)),
+                new UserAssignmentByTypeInfo(GetUsersAllTypeAssignByCountry(UserTypeEnum.Staff, countryId)),
+                new UserAssignmentByTypeInfo(GetUsersAllTypeAssignByCountry(UserTypeEnum.Employee, countryId))
+            };
+        }
+
         private IEnumerable<UserAssignmentInfo> GetUsersAssignByUser(User user, bool isSuper = false)
         {
             if (user.UserType.Equals(UserTypeEnum.Employee))

@@ -19,4 +19,28 @@ namespace Common.DTOs.CommonModel
             }
         }
     }
+
+    public class UserAssignmentByTypeInfo
+    {
+        public UserAssignmentByTypeInfo() { }
+
+        public UserAssignmentByTypeInfo(IEnumerable<UserAssignmentInfo> users)
+        {
+            Users = users;
+        }
+
+        public IEnumerable<UserAssignmentInfo> Users { get; set; } = new List<UserAssignmentInfo>();
+
+        public int TotalUser
+        {
+            get
+            {
+                return Users.ToList().Count();
+            }
+            set
+            {
+                TotalUser = value;
+            }
+        }
+    }
 }
