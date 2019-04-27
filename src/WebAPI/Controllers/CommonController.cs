@@ -38,9 +38,9 @@ namespace WebAPI.Controllers
             => Json(data: _commonService.GetDetailCountry(GetCurrentUser()));
 
         [HttpGet]
-        [Route("GetUsersAssign")]
-        public IActionResult GetUsersAssign(string username)
-            => Json(data: _commonService.GetListAssignByType(username));
+        [Route("GetListAssignByType")]
+        public IActionResult GetUsersAssign()
+            => Json(data: _commonService.GetListAssignByType(GetCurrentUser()));
 
         [HttpGet]
         [Route("GetUsersAllTypeAssignByCountry")]
