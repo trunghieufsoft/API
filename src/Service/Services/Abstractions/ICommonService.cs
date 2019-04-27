@@ -13,7 +13,7 @@ namespace Service.Services.Abstractions
 
         DetailCountryInfo GetDetailCountry(string username);
 
-        UserAssignmentInfo GetUsersAssign(string username);
+        IEnumerable<UserAssignmentByTypeInfo> GetListAssignByType(string username);
 
         IEnumerable<UserAssignmentInfo> GetUsersAllTypeAssignByCountry(UserTypeEnum userType, string country = null);
     }

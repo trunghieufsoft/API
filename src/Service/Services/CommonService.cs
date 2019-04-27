@@ -85,7 +85,24 @@ namespace Service.Services
             return result;
         }
 
-        public UserAssignmentInfo GetUsersAssign(string username)
+        public IEnumerable<UserAssignmentByTypeInfo> GetListAssignByType(string username)
+        {
+            User user = _userRepository.Get(x => x.Username.Equals(username));
+            return GetUserAssignmentByType(user.CountryId);
+        }
+        #endregion
+
+        #region Method
+        public IEnumerable<UserAssignmentByTypeInfo> GetUserAssignmentByType(string countryId = null)
+        {
+            return new UserAssignmentByTypeInfo[] {
+                new UserAssignmentByTypeInfo(GetUsersAllTypeAssignByCountry(UserTypeEnum.Manager, countryId)),
+                new UserAssignmentByTypeInfo(GetUsersAllTypeAssignByCountry(UserTypeEnum.Staff, countryId)),
+                new UserAssignmentByTypeInfo(GetUsersAllTypeAssignByCountry(UserTypeEnum.Employee, countryId))
+            };
+        }
+
+        private UserAssignmentInfo GetUsersAssign(string username)
         {
             User user = _userRepository.Get(x => x.Username.Equals(username));
             if (user != null)
@@ -103,17 +120,6 @@ namespace Service.Services
             {
                 throw new DefinedException(ErrorCodeEnum.UserNotFound);
             }
-        }
-        #endregion
-
-        #region Method
-        private IEnumerable<UserAssignmentByTypeInfo> GetUserAssignmentByType(string countryId = null)
-        {
-            return new UserAssignmentByTypeInfo[] {
-                new UserAssignmentByTypeInfo(GetUsersAllTypeAssignByCountry(UserTypeEnum.Manager, countryId)),
-                new UserAssignmentByTypeInfo(GetUsersAllTypeAssignByCountry(UserTypeEnum.Staff, countryId)),
-                new UserAssignmentByTypeInfo(GetUsersAllTypeAssignByCountry(UserTypeEnum.Employee, countryId))
-            };
         }
 
         private IEnumerable<UserAssignmentInfo> GetUsersAssignByUser(User user, bool isSuper = false)

@@ -40,7 +40,7 @@ namespace WebAPI.Controllers
         [HttpGet]
         [Route("GetUsersAssign")]
         public IActionResult GetUsersAssign(string username)
-            => Json(data: _commonService.GetUsersAssign(username));
+            => Json(data: _commonService.GetListAssignByType(username));
 
         [HttpGet]
         [Route("GetUsersAllTypeAssignByCountry")]
