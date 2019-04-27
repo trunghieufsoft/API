@@ -76,7 +76,10 @@ namespace Service.Services
                     throw new DefinedException(ErrorCodeEnum.NotAuthorized);
                 }
                 var users = string.IsNullOrWhiteSpace(user.Users) ? string.Empty : user.Users;
-                user.Users = users + (string.IsNullOrEmpty(users) ? string.Empty : _comma) + GenerateUsers(user.UserType, user.CountryId, user.Groups, string.IsNullOrEmpty(users) ? null : user.Users.Split(_comma));
+                string userAssign = GenerateUsers(user.UserType, user.CountryId, user.Groups, string.IsNullOrEmpty(users) ? null : user.Users.Split(_comma));
+                user.Users = users + (string.IsNullOrEmpty(users) ? string.Empty : string.IsNullOrEmpty(userAssign) ? string.Empty : _comma) + userAssign;
+                user.LastUpdatedBy = currentUser;
+                user.LastUpdateDate = Clock.Now;
                 _userRepository.Update(user);
             }
             catch (Exception e)
@@ -179,10 +182,10 @@ namespace Service.Services
             => Search(requestDto, UserTypeEnum.Manager, 6);
 
         public SearchOutput SearchStaff(DataInput<SearchInput> requestDto)
-            => Search(requestDto, UserTypeEnum.Staff, 7);
+            => Search(requestDto, UserTypeEnum.Staff, 8);
 
         public SearchOutput SearchEmployee(DataInput<SearchInput> requestDto)
-            => Search(requestDto, UserTypeEnum.Employee, 7);
+            => Search(requestDto, UserTypeEnum.Employee, 8);
 
         public void AllowUnselectGroups(UnselectGroupsInput input)
         {
