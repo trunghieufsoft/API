@@ -99,6 +99,7 @@ namespace Database.Migrations
                     GROUP_UND_SF = table.Column<string>(maxLength: 4096, nullable: true),
                     USERS_UND_MN = table.Column<string>(maxLength: 4096, nullable: true),
                     STATUS = table.Column<string>(maxLength: 2048, nullable: false),
+                    END_OF_DAY = table.Column<bool>(nullable: false),
                     ADDRESS = table.Column<string>(maxLength: 2048, nullable: false),
                     EMAIL = table.Column<string>(maxLength: 2048, nullable: true),
                     PHONE = table.Column<string>(maxLength: 128, nullable: false),

@@ -172,6 +172,9 @@ namespace Database.Migrations
                         .HasColumnName("EMAIL")
                         .HasMaxLength(2048);
 
+                    b.Property<bool>("EndOfDay")
+                        .HasColumnName("END_OF_DAY");
+
                     b.Property<DateTime?>("ExpiredDate")
                         .HasColumnName("EXPIRED_DT");
 

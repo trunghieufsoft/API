@@ -69,8 +69,9 @@ namespace Common.DTOs.UserModel
         [Required(ErrorMessage = "Id is required")]
         public Guid Id { get; set; }
 
-        public bool Status { get; set; } = true;
-
+        [Required(ErrorMessage = "Status is required")]
+        public Status Status { get; set; }
+    
         [StringLength(2048)]
         [Required(ErrorMessage = "CountryId is required")]
         public string CountryId { get; set; }

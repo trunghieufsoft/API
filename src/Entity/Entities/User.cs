@@ -72,6 +72,9 @@ namespace Entities.Entities
         [NotMapped]
         public StatusEnum Status { get; set; }
 
+        [Column("END_OF_DAY")]
+        public bool EndOfDay { get; set; } = false;
+
         [Required]
         [StringLength(2048)]
         [Column("ADDRESS")]

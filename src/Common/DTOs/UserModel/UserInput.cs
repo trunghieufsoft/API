@@ -46,6 +46,9 @@ namespace Common.DTOs.UserModel
     public class StaffInput
     {
         #region Properties
+        [Required]
+        public bool Status { get; set; }
+
         [StringLength(2048)]
         [Required(ErrorMessage = "CountryId is required")]
         public string CountryId { get; set; }
@@ -86,6 +89,9 @@ namespace Common.DTOs.UserModel
     public class EmployeeInput
     {
         #region Properties
+        [Required]
+        public bool Status { get; set; }
+
         [StringLength(2048)]
         [Required(ErrorMessage = "CountryId is required")]
         public string CountryId { get; set; }

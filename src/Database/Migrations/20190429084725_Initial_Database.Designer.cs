@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Database.Migrations
 {
     [DbContext(typeof(APIDbContext))]
-    [Migration("20190411212636_Initial_Database")]
+    [Migration("20190429084725_Initial_Database")]
     partial class Initial_Database
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -173,6 +173,9 @@ namespace Database.Migrations
                     b.Property<string>("Email")
                         .HasColumnName("EMAIL")
                         .HasMaxLength(2048);
+
+                    b.Property<bool>("EndOfDay")
+                        .HasColumnName("END_OF_DAY");
 
                     b.Property<DateTime?>("ExpiredDate")
                         .HasColumnName("EXPIRED_DT");

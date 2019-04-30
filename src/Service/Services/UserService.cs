@@ -407,16 +407,16 @@ namespace Service.Services
                         .WhereIf(!string.IsNullOrEmpty(groups), x => groups.SplitTrim(_comma).Any(g => g.Equals(x.Groups)));
 
                     return TStaff.Count() > 0 ?
-                        TStaff.AsQueryable().Select(x => new DropdownList(x.Code, x.Username)).AsEnumerable()
+                        TStaff.AsQueryable().Select(row => new DropdownList(row.Code, row.Username)).AsEnumerable()
                         : new List<DropdownList>();
 
                 case UserTypeEnum.Staff:
                     TStaff = TStaff.AsQueryable().Where(x => !string.IsNullOrEmpty(x.Users));
-                    TStaff = TStaff.Where(s => !TManagers.Any(m => m.Users.SplitTrim(_comma).Any(x => x.Equals(s.Code)))).AsQueryable()
+                    TEmployee = TEmployee.Where(e => !TStaff.Any(s => s.Users.SplitTrim(_comma).Any(x => x.Equals(e.Code)))).AsQueryable()
                         .WhereIf(!string.IsNullOrEmpty(groups), x => groups.SplitTrim(_comma).Any(g => g.Equals(x.Groups)));
 
                     return TEmployee.Count() > 0 ?
-                        TEmployee.AsQueryable().Select(x => new DropdownList(x.Code, x.Username)).AsEnumerable()
+                        TEmployee.AsQueryable().Select(row => new DropdownList(row.Code, row.Username)).AsEnumerable()
                         : new List<DropdownList>();
 
                 case UserTypeEnum.SuperAdmin:
@@ -577,7 +577,11 @@ namespace Service.Services
                     Email = (string)dataObject.Email,
                     Phone = (string)dataObject.PhoneNo,
                     UserType = userType,
-                    Status = dataObject is EmployeeInput ? StatusEnum.Available : StatusEnum.Active,
+                    Status = dataObject is ManagerInput
+                        ? StatusEnum.Active
+                        : (bool)dataObject.Status 
+                            ? dataObject is StaffInput ? StatusEnum.Active : StatusEnum.Available
+                            : dataObject is StaffInput ? StatusEnum.Inactive : StatusEnum.Unavailable,
                     StartDate = (DateTime?)dataObject.StartDate,
                     ExpiredDate = (DateTime?)dataObject.ExpiredDate,
                     Password = string.IsNullOrEmpty(dataObject.Password) ? GeneratePassword() : dataObject.Password,
@@ -638,11 +642,23 @@ namespace Service.Services
                     throw new DefinedException(exitedEmail);
                 }
                 #region handle variable
-                bool dataStatus = (user.ExpiredDate.Value - DateTime.Now).TotalDays < 0 ? false : (bool)dataInput.Status;
-                StatusEnum valueType = dataStatus
-                    ? dataInput is EmployeeUpdateInput ? StatusEnum.Available : StatusEnum.Active
-                    : dataInput is EmployeeUpdateInput ? StatusEnum.Unavailable : StatusEnum.Inactive;
-                if (!AllowUnselectGroups((string)dataInput.CountryId, dataInput is ManagerUpdateInput ? (string)dataInput.Groups : (string)dataInput.Group, (string)dataInput.Users, user))
+                bool dataStatus = (user.ExpiredDate.Value - DateTime.Now).TotalDays >= 0;
+                StatusEnum valueType;
+                if (dataStatus)
+                {
+                    Status StatusDetail = (Status)dataInput.Status;
+                    valueType = !dataStatus
+                        ? StatusEnum.Inactive
+                        : StatusDetail.GetStatusEnum();
+                } else
+                {
+                    valueType = StatusEnum.Inactive;
+                }
+
+                if (!AllowUnselectGroups((string)dataInput.CountryId,
+                    dataInput is ManagerUpdateInput ? (string)dataInput.Groups : (string)dataInput.Group,
+                    dataInput is EmployeeUpdateInput ? null : (string)dataInput.Users,
+                    user))
                 {
                     Log.Information("Cannot unselect the group from the list!", ErrorCodeEnum.CannotUnSelectGroup);
                     throw new DefinedException(ErrorCodeEnum.CannotUnSelectGroup);
