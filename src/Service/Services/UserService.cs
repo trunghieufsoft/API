@@ -564,6 +564,7 @@ namespace Service.Services
                 }
                 string codeLate = _userRepository.GetAll().OrderBy(x => x.CreatedDate).Last().Code.Base64ToString();
                 var Code = genCode.GenerateCode(Convert.ToInt32(codeLate) + 1);
+                var Groups = dataObject is ManagerInput ? (string)dataObject.Groups : (string)dataObject.Group;
                 User user = new User
                 {
                     Id = Guid.NewGuid(),
@@ -571,15 +572,15 @@ namespace Service.Services
                     CountryId = (string)dataObject.CountryId,
                     Username = (string)dataObject.Username,
                     FullName = (string)dataObject.FullName,
-                    Users = dataObject is EmployeeInput ? null : GenerateUsers(userType, (string)dataObject.CountryId, (string)dataObject.Groups),
-                    Groups = dataObject is ManagerInput ? (string)dataObject.Groups : (string)dataObject.Group,
+                    Users = dataObject is EmployeeInput ? null : GenerateUsers(userType, (string)dataObject.CountryId, Groups),
+                    Groups = Groups,
                     Address = (string)dataObject.Address,
                     Email = (string)dataObject.Email,
                     Phone = (string)dataObject.PhoneNo,
                     UserType = userType,
                     Status = dataObject is ManagerInput
                         ? StatusEnum.Active
-                        : (bool)dataObject.Status 
+                        : (bool)dataObject.Status
                             ? dataObject is StaffInput ? StatusEnum.Active : StatusEnum.Available
                             : dataObject is StaffInput ? StatusEnum.Inactive : StatusEnum.Unavailable,
                     StartDate = (DateTime?)dataObject.StartDate,
@@ -646,11 +647,18 @@ namespace Service.Services
                 StatusEnum valueType;
                 if (dataStatus)
                 {
-                    Status StatusDetail = (Status)dataInput.Status;
-                    valueType = !dataStatus
-                        ? StatusEnum.Inactive
-                        : StatusDetail.GetStatusEnum();
-                } else
+                    Status StatusDetail = null;
+                    if (dataInput is EmployeeUpdateInput)
+                    {
+                        StatusDetail = (Status)dataInput.Status;
+                    }
+                    valueType = StatusDetail != null
+                        ? StatusDetail.GetStatusEnum()
+                        : (bool)dataInput.Status
+                            ? StatusEnum.Active
+                            : StatusEnum.Inactive;
+                }
+                else
                 {
                     valueType = StatusEnum.Inactive;
                 }
