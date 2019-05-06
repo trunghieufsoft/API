@@ -270,7 +270,7 @@ namespace Service.Services
 
         public void ForgotPassword(DataInput<ResetPasswordInput> requestDto)
         {
-            User user = GetUserContact(requestDto.CurrentUser);
+            User user = GetUserContact(requestDto.Dto.Username);
             if (user != null)
             {
                 if (requestDto.Dto.Email.Trim().Equals(user.Email.Trim()))

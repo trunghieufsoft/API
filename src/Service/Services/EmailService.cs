@@ -60,7 +60,7 @@ namespace Service.Services
                     attachment = new Attachment(fileUlr);
                     mail.Attachments.Add(attachment);
                 }
-                SmtpServer.Port = int.Parse(_config["mailServer:Post"]); ;
+                SmtpServer.Port = int.Parse(_config["mailServer:Post"]);
                 SmtpServer.Credentials = new System.Net.NetworkCredential(sender, password);
                 SmtpServer.EnableSsl = bool.Parse(_config["mailServer:EnableSsl"]);
 
